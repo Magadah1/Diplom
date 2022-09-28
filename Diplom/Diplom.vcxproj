@@ -127,7 +127,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CIrregCell.cpp" />
+    <ClCompile Include="CIrregFace.cpp" />
+    <ClCompile Include="CIrregMesh.cpp" />
+    <ClCompile Include="CPoint.cpp" />
+    <ClCompile Include="CSideEquation.cpp" />
+    <ClCompile Include="CSurfaceNode.cpp" />
+    <ClCompile Include="CVector.cpp" />
     <ClCompile Include="Source.cpp" />
+    <ClCompile Include="Tetrahedron.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CIrregCell.h" />
+    <ClInclude Include="CIrregFace.h" />
+    <ClInclude Include="CIrregMesh.h" />
+    <ClInclude Include="CPoint.h" />
+    <ClInclude Include="CSideEquation.h" />
+    <ClInclude Include="CSurfaceNode.h" />
+    <ClInclude Include="CVector.h" />
+    <ClInclude Include="Tetrahedron.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
