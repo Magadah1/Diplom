@@ -19,3 +19,15 @@ CPoint::CPoint(const CPoint* other)
 	:CPoint(*other)
 {
 }
+
+CPoint& CPoint::operator=(const CPoint& other) noexcept
+{
+	if (&other == this)
+		return *this;
+
+	x = other.x;
+	y = other.y;
+	z = other.z;
+
+	return *this;
+}

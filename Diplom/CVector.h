@@ -1,5 +1,5 @@
 #pragma once
-#include "CPoint.h"
+#include "CSurfaceNode.h"
 #include <cmath>
 class CVector :
     public CPoint
@@ -14,6 +14,7 @@ public:
     CVector(const CPoint* start, const CPoint* end);
     CVector(const CVector& other) noexcept;
     CVector(const CVector* other);
+    CVector operator=(const CPoint& other) noexcept;
 
     inline double Length() const noexcept
     {
@@ -101,6 +102,10 @@ public:
     {
         return CVector(y * other.z - z * other.y, -(x * other.z - z * other.x), x * other.y - y * other.x);
     }
+    inline CVector operator-() const noexcept
+    {
+        return CVector(-x, -y, -z);
+    }
     inline double Mixed(const CVector& v2, const CVector& v3) const noexcept
     {
         return (*this % v2) * v3;
@@ -112,6 +117,18 @@ public:
     inline CPoint toCPoint() const noexcept
     {
         return CPoint(x, y, z);
+    }
+    inline CSurfaceNode toCSurfaceNode() const noexcept
+    {
+        return CSurfaceNode(x, y, z);
+    }
+    inline CPoint& likePoint() noexcept
+    {
+        return *this;
+    }
+    inline const CPoint& likePoint() const noexcept
+    {
+        return *this;
     }
     inline CVector createVector(const CPoint& end) const noexcept
     {

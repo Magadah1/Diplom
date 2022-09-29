@@ -6,6 +6,7 @@ public:
 	CPoint(const double& _x, const double& _y, const double& _z) noexcept;
 	CPoint(const CPoint& other) noexcept;
 	CPoint(const CPoint* other);
+	CPoint& operator=(const CPoint& other) noexcept;
 	inline double& X() noexcept
 	{
 		return x;

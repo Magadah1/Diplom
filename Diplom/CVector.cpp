@@ -44,3 +44,15 @@ CVector::CVector(const CVector* other)
 	: CVector(*other)
 {
 }
+
+CVector CVector::operator=(const CPoint& other) noexcept
+{
+	if (&other == this)
+		return *this;
+
+	x = other.X();
+	y = other.Y();
+	z = other.Z();
+
+	return *this;
+}

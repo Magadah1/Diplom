@@ -3,6 +3,7 @@
 #include "CIrregCell.h"
 #include "CIrregFace.h"
 #include "CSurfaceNode.h"
+#include "CSideEquation.h"
 
 class CIrregMesh
 {
@@ -12,6 +13,6 @@ public:
 	std::vector<CIrregFace> faces;
 	std::vector<CSurfaceNode> nodes;
 
-	std::vector<CIrregCell> FindContactBorder(const int& cellNumber, const CPoint& startPoint, const CPoint& endPoint, const double& volume);
+	std::vector<CIrregCell> FindContactBorder(const int& cellNumber, CPoint startPoint, CPoint endPoint, const double& volume);
 };
 
