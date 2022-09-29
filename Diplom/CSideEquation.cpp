@@ -129,10 +129,10 @@ bool CSideEquation::getIntersectionPoint(const CPoint* p, const CVector* v, CPoi
 
 bool CSideEquation::getIntersectionPointOnLine(const CPoint& p1, const CPoint& p2, CPoint* const result) const noexcept
 {
-	CPoint res;
+	/*CPoint res;
 
 	if (!getIntersectionPoint(p1, p2, &res))
-		return false;
+		return false;*/
 
 	// Сравнение по длинам составных отрезков
 	/*if (abs(CVector(p1).createVector(res).Length() + CVector(res).createVector(p2).Length() - CVector(p1).createVector(p2).Length()) < 1e-6)
@@ -170,9 +170,10 @@ bool CSideEquation::getIntersectionPointOnLine(const CPoint& p1, const CPoint& p
 	{
 		return false;
 	}
-	if (result)
+	/*if (result)
 		*result = res;
-	return true;
+	return true;*/
+	return getIntersectionPoint(p1, p2, result);
 }
 
 bool CSideEquation::getIntersectionPointOnLine(const CPoint* p1, const CPoint* p2, CPoint* const result) const

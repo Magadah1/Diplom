@@ -11,4 +11,7 @@ int main(int argc, char** argv)
 
 	if (side.getIntersectionPointOnLine(p1, p2, &interPoint))
 		std::cout << interPoint.X() << '\t' << interPoint.Y() << '\t' << interPoint.Z();
+
+	std::cout << "\n" << interPoint.X() << '\t' << interPoint.Y() << '\t' << interPoint.Z();
+
 }
