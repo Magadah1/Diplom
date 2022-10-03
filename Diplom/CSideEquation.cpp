@@ -144,8 +144,8 @@ bool CSideEquation::getIntersectionPointOnLine(const CPoint& p1, const CPoint& p
 
 	return false;*/
 
-	double valueP1 = getValue(p1); valueP1 = abs(valueP1) < 1e-6 ? 0 : abs(valueP1) / valueP1;
-	double valueP2 = getValue(p2); valueP2 = abs(valueP2) < 1e-6 ? 0 : abs(valueP2) / valueP2;
+	double valueP1 = getNormedValue(p1); 
+	double valueP2 = getNormedValue(p2); 
 
 	// значения valueP1[2] равны 1,0 или -1 если точка находится по направлению нормали, на плоскости или против направления нормали соответсвенно
 	

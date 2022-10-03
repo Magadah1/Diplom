@@ -1,5 +1,6 @@
 #pragma once
 #include "CPoint.h"
+
 class CSurfaceNode :
     public CPoint
 {

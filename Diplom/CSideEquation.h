@@ -35,6 +35,18 @@ public:
 	{
 		return getValue(*p);
 	}
+	inline double getNormedValue(const CPoint& p) const noexcept
+	{
+		const double value = getValue(p);
+
+		return abs(value) < 1e-6 ? 0.: value / abs(value);
+	}
+	inline double getNormedValue(const CPoint* p) const
+	{
+		const double value = getValue(p);
+
+		return value ? value / abs(value) : 0.;
+	}
 	inline double recalcD(const CPoint& p) noexcept
 	{
 		d = -(a * p.X() + b * p.Y() + c * p.Z());

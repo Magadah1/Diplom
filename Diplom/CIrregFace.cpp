@@ -1,7 +1,7 @@
 #include "CIrregFace.h"
 
 CIrregFace::CIrregFace() noexcept
-	:cell1(0), cell2(0)
+	:cell1(-1), cell2(-1)
 {
 }
 
