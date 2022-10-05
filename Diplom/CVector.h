@@ -122,11 +122,11 @@ public:
     {
         return CSurfaceNode(x, y, z);
     }
-    inline CPoint& likePoint() noexcept
+    inline CPoint& likeCPoint() noexcept
     {
         return *this;
     }
-    inline const CPoint& likePoint() const noexcept
+    inline const CPoint& likeCPoint() const noexcept
     {
         return *this;
     }

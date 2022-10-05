@@ -11,5 +11,13 @@ public:
     CSurfaceNode(const CPoint* p);
     CSurfaceNode(const CSurfaceNode& other) noexcept;
     CSurfaceNode(const CSurfaceNode* other);
+    inline CPoint& likeCPoint() noexcept
+    {
+        return *this;
+    }
+    inline const CPoint& likeCPoint() const noexcept
+    {
+        return *this;
+    }
 };
 

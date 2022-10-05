@@ -119,7 +119,7 @@ bool CSideEquation::getIntersectionPoint(const CPoint* p1, const CPoint* p2, CPo
 
 bool CSideEquation::getIntersectionPoint(const CPoint& p, const CVector& v, CPoint* const result) const noexcept
 {
-	return getIntersectionPoint(p, (v + p).likePoint(), result);
+	return getIntersectionPoint(p, (v + p).likeCPoint(), result);
 }
 
 bool CSideEquation::getIntersectionPoint(const CPoint* p, const CVector* v, CPoint* const result) const
@@ -183,7 +183,7 @@ bool CSideEquation::getIntersectionPointOnLine(const CPoint* p1, const CPoint* p
 
 bool CSideEquation::getIntersectionPointOnLine(const CPoint& p, const CVector& v, CPoint* const result) const noexcept
 {
-	return getIntersectionPointOnLine(p, (v + p).likePoint(), result);
+	return getIntersectionPointOnLine(p, (v + p).likeCPoint(), result);
 }
 
 bool CSideEquation::getIntersectionPointOnLine(const CPoint* p, const CVector* v, CPoint* const result) const
