@@ -35,7 +35,7 @@ std::vector<CIrregCell> CIrregMesh::FindContactBorder(const int& cellNumber, CPo
         for (int cellFaceI = 0; cellFaceI < cell.facesInd.size(); ++cellFaceI) 
         {
             const CIrregFace& face = faces[cell.facesInd[cellFaceI]]; // текущая сторона
-            resultCells[0].facesInd.push_back(cell.facesInd[cellFaceI]); // добавляем номер стороны для нашей клетки.
+            resultCells[0].facesInd.push_back(cell.facesInd[cellFaceI]); // добавляем номер стороны для нашей клетки. ??????????
 
             // Потенциально разбиваем сторону клетки на 2. Первая сохранит свой номер в дальнейшем.
             CIrregFace newVolumeFace, newOtherFace;
@@ -64,8 +64,8 @@ std::vector<CIrregCell> CIrregMesh::FindContactBorder(const int& cellNumber, CPo
                 const CSurfaceNode& Node1 = nodes[faceNodeI];                               // первая точка для отрезка.
                 const CSurfaceNode& Node2 = nodes[(faceNodeI + 1ull) % face.nodes.size()];  // вторая точка для отрезка. Типа ребро.
 
-                const double Node1V = plane.getNormedValue(Node1);
-                const double Node2V = plane.getNormedValue(Node2);
+                const int Node1V = plane.getNormedValue(Node1);
+                const int Node2V = plane.getNormedValue(Node2);
 
                 if (Node1V == Node2V && Node1V) // если вершины по одну сторону от плоскости, то забиваем на пересечение
                 {
@@ -81,6 +81,23 @@ std::vector<CIrregCell> CIrregMesh::FindContactBorder(const int& cellNumber, CPo
                         newVolumeFace.nodes.push_back(faceNodeI);
                         newOtherFace.nodes.push_back(faceNodeI);
                         planePoints.push_back(Node1); --newNodeId;
+                    }
+                    else if (!Node1V || !Node2V) // одна точка на плоскости. Другая по какую-то сторону
+                    {
+                        switch (Node1V)
+                        {
+                        case 1:
+                            newOtherFace.nodes.push_back(faceNodeI);
+                            break;
+                        case 0:
+                            planePoints.push_back(Node1); --newNodeId;
+                            newVolumeFace.nodes.push_back(newNodeId);
+                            newOtherFace.nodes.push_back(newNodeId);
+                            break;
+                        case -1:
+                            newVolumeFace.nodes.push_back(faceNodeI);
+                            break;
+                        }
                     }
                     else
                     {
@@ -114,29 +131,30 @@ std::vector<CIrregCell> CIrregMesh::FindContactBorder(const int& cellNumber, CPo
         // Нужно как-то определить:
         // planeFace.cell1 = ?
         // planeFace.cell2 = ?
-        // planeFace.nodes <= unique planePoints
+        // planeFace.nodes <= unique ids of planePoints
         faces.push_back(planeFace);
         
 
         // БЛОК 2. СЧИТАЕМ ОБЪЁМ НУЖНОЙ КЛЕТКИ. ВОЗМОЖНО ПО МЕДИАНЕ!!!!
         CIrregCell& newCell = resultCells[0];
         newCell.facesInd.push_back(newFaceId);
-
+        // ТУТ ЕСТЬ ОТРИЦАТЕЛЬНЫЕ ИНДЕКСЫ!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         std::vector<Tetrahedron> cellTetrahedrons = spliteCellByTetrahedrons(newCell);
-        for (int i = 0; i < cellTetrahedrons.size(); ++i)
+        for (size_t i = 0; i < cellTetrahedrons.size(); ++i)
             tempVolume += cellTetrahedrons[i].getVolume();
         
 
         // БЛОК 3. СРАВНЕНИЕ ОБЪЕМОВ.
         if (abs(tempVolume - volume) < eps) // проверяем, сколько объёма нашли
         {
-            // БЛОК 4. ИЗМЕНЕНИЕ ДАННЫХ В ИСХОДНОЙ СЕТКЕ.
+            // БЛОК 3.1. ИЗМЕНЕНИЕ ДАННЫХ В ИСХОДНОЙ СЕТКЕ.
 
 
             break;
         }
         else
         {
+            // БЛОК 3.2. ПОВТОРНЫЙ РАСЧЁТ УРАВНЕНИЯ ПЛОСКОСТИ И Т.П.
             //resultCells.clear();
             resultFaces[0].clear();
             resultFaces[1].clear();
@@ -166,11 +184,11 @@ CSurfaceNode CIrregMesh::getCellCenter(const CIrregCell& cell) const noexcept
         for (int nodeId = 0; nodeId < faces[faceId].nodes.size(); ++nodeId)
             allNodes.push_back(nodes[faces[faceId].nodes[nodeId]]);
 
-    std::vector<CSurfaceNode> uniquiNodes;
-    for (int i = 0; i < allNodes.size(); ++i)
+    //std::vector<CSurfaceNode> uniquiNodes;
+   /* for (int i = 0; i < allNodes.size(); ++i)
     {
         bool was = false;
-        for (int j =0 ;j < uniquiNodes.size(); ++j)
+        for (int j = 0; j < uniquiNodes.size(); ++j)
             if (CVector(allNodes[i]) == CVector(uniquiNodes[j]))
             {
                 was = true;
@@ -178,7 +196,10 @@ CSurfaceNode CIrregMesh::getCellCenter(const CIrregCell& cell) const noexcept
             }
         if (!was)
             uniquiNodes.push_back(allNodes[i]);
-    }
+    }*/
+    std::vector<CSurfaceNode> uniquiNodes = getUniqueElements<CSurfaceNode, CVector>(allNodes);
+
+
 
     CVector center;
     for (int i = 0; i < uniquiNodes.size(); ++i)

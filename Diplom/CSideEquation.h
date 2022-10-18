@@ -35,7 +35,7 @@ public:
 	{
 		return getValue(*p);
 	}
-	inline double getNormedValue(const CPoint& p) const noexcept
+	inline int getNormedValue(const CPoint& p) const noexcept
 	{
 		const double value = getValue(p);
 
