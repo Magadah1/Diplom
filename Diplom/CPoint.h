@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 class CPoint
 {
 public:

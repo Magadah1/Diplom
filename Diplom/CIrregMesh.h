@@ -14,7 +14,9 @@ public:
 	std::vector<CIrregFace> faces;
 	std::vector<CSurfaceNode> nodes;
 
-	std::vector<CIrregCell> FindContactBorder(const int& cellNumber, CPoint startPoint, CPoint endPoint, const double& volume);
+	std::pair<int, int> FindContactBorder(const int& cellNumber, CPoint startPoint, CPoint endPoint, const double& volume);
+
+	double getCellVolume(const CIrregCell& cell) const noexcept;
 
 	template<typename UniqueType, typename CastTo = UniqueType>
 	static std::vector<UniqueType> getUniqueElements(const std::vector<UniqueType>& elements);

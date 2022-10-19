@@ -19,5 +19,13 @@ public:
     {
         return *this;
     }
+    inline bool operator==(const CSurfaceNode& other) const noexcept
+    {
+        return this->x == other.x && this->y == other.y && this->z == other.z;
+    }
+    inline bool operator!=(const CSurfaceNode& other) const noexcept
+    {
+        return !(*this == other);
+    }
 };
 
