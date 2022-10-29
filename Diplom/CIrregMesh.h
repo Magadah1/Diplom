@@ -19,8 +19,8 @@ public:
 
 	double getCellVolume(const CIrregCell& cell) const noexcept;
 
-	template<typename UniqueType, typename CastTo = UniqueType>
-	static std::vector<UniqueType> getUniqueElements(const std::vector<UniqueType>& elements);
+	template<typename OStream>
+	void sayInfo(OStream& out);
 
 private:
 	CSurfaceNode getCellCenter(const CIrregCell& cell) const noexcept;
@@ -29,22 +29,34 @@ private:
 	std::vector<Tetrahedron> spliteCellByTetrahedrons(const CIrregCell& cell) const noexcept;
 };
 
-template<typename UniqueType, typename CastTo>
-inline std::vector<UniqueType> CIrregMesh::getUniqueElements(const std::vector<UniqueType>& elements)
+template<typename OStream>
+inline void CIrregMesh::sayInfo(OStream& out)
 {
-	std::vector<UniqueType> unique;
-	for (size_t i = 0; i < elements.size(); ++i)
+	for (size_t cId = 0; cId < cells.size(); ++cId)
 	{
-		bool was = false;
-		for (size_t j = 0; j < unique.size(); ++j)
-			if (CastTo(elements[i]) == CastTo(unique[j]))
+		const CIrregCell& cell = cells[cId];
+
+		out << "---------------------------------------------------\n";
+		out << "Cell #" << cId << " with volume = " << getCellVolume(cell) << '\n';
+
+		for (size_t fId = 0; fId < cell.facesInd.size(); ++fId)
+		{
+			const int& faceID = cell.facesInd[fId];
+			const CIrregFace& face = faces[faceID];
+
+			out << "\tFace #" << faceID << " with cell1 = " << face.cell1 << " and cell2 = " << face.cell2 << '\n';
+
+			for (size_t nId = 0; nId < face.nodes.size(); ++nId)
 			{
-				was = true;
-				break;
+				const int& nodeID = face.nodes[nId];
+				const CSurfaceNode& node = nodes[nodeID];
+
+				out << "\t\tNode #" << nodeID << " = {" << node.X() << " ; " << node.Y() << " ; " << node.Z() << "}\n";
 			}
 
-		if (!was)
-			unique.push_back(elements[i]);
+			out << '\n';
+		}
+
+		out << "---------------------------------------------------\n\n\n\n";
 	}
-	return unique;
 }

@@ -9,7 +9,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
     constexpr double eps = 1e-8; // появился в C++11, если не работает - заменить на const double
     const CIrregCell& cell = cells[cellNumber]; // получаем клетку сетки
 
-    if (getCellVolume(cell) > volume)
+    if (getCellVolume(cell) < volume)
         throw std::exception("Искомый объём больше объёма самой ячейки!\n");
 
     CPoint mid = (CVector(startPoint) + endPoint) / 2.; // Середина отрезка [startPoint, endPoint]
@@ -28,9 +28,10 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
     std::vector<CIrregFace> resultFaces[2]; // Стороны новых клеток; СТРАННО 0 - клетка по другую сторону от нормали, 1 - другая.
     std::vector<CSurfaceNode> planePoints; // Новые вершины, которые могут получится при пересечении с плоскостью отсечения. С "отрицательным индексом" у ранее поделённых сторон.
     std::vector<int> rightUniquiePlanePoints; // Тут будут лишь уникальные точки плоскости, причём расположенные в правильном (друг за другом) порядке.
-    // 0 - индекс исходной стороны, 1 - индекс в resultFaces[0], 2 - индекс в resultFaces[1]. Если нет разбиения у стороны, то индекс 1 или 2 будет равен -1
+    // 0 - индекс исходной стороны, 1 - индекс в resultFaces[0], 2 - индекс в resultFaces[1]. Если нет разбиения у стороны для новой клетки, то индекс 1 или 2 будет равен -1
     using FaceSplitting = std::tuple<int, int, int>;
-    std::vector<FaceSplitting> faceSplit(cell.facesInd.size()); // Связи старых сторон с потенкицально новыми.
+    std::vector<FaceSplitting> faceSplit; // Связи старых сторон с потенкицально новыми.
+    faceSplit.reserve(cell.facesInd.size());
     //
 
     // БЛОК 1. РАЗБИЕНИЕ КЛЕТКИ НА 2
@@ -59,7 +60,6 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
 
                 newOtherFace.cell1 = newCellId;
                 newOtherFace.cell2 = face.cell2;
-
             }
             else
             {
@@ -78,8 +78,8 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
             {
                 const int Node1ID = face.cell1 == cellNumber ? face.nodes[faceNodeI] : face.nodes[(faceNodeI + 1ull) % face.nodes.size()];  // Индекс первой точки в глобальном массиве.
                 const int Node2ID = face.cell1 == cellNumber ? face.nodes[(faceNodeI + 1ull) % face.nodes.size()] : face.nodes[faceNodeI];  // Индекс второй точки в глобальном массиве.
-                const CSurfaceNode& Node1 = face.cell1 == cellNumber ? nodes[Node1ID] : nodes[Node2ID];    // первая точка для отрезка.
-                const CSurfaceNode& Node2 = face.cell1 == cellNumber ? nodes[Node2ID] : nodes[Node1ID];    // вторая точка для отрезка. Типа ребро.
+                const CSurfaceNode& Node1 = nodes[Node1ID];    // первая точка для отрезка.
+                const CSurfaceNode& Node2 = nodes[Node2ID];    // вторая точка для отрезка. Типа ребро.
 
                 const int Node1V = plane.getNormedValue(Node1);
                 const int Node2V = plane.getNormedValue(Node2);
@@ -158,12 +158,12 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
 
                         duplicatePoint = false;
                         for (duplicateId = 0; duplicateId < planePoints.size() && !duplicatePoint; ++duplicateId)
-                            if (planePoints[duplicateId] == Node1)
+                            if (planePoints[duplicateId] == interPoint)
                                 duplicatePoint = true;
 
                         if (!duplicatePoint)
                         {
-                            planePoints.push_back(Node1); --newNodeId;
+                            planePoints.push_back(interPoint); --newNodeId;
                             newVolumeFace.nodes.push_back(newNodeId);
                             newOtherFace.nodes.push_back(newNodeId);
                         }
@@ -339,9 +339,9 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
         if (abs(tempVolume - volume) < eps) // проверяем, сколько объёма нашли
         {
             // БЛОК 3.1. ИЗМЕНЕНИЕ ДАННЫХ В ИСХОДНОЙ СЕТКЕ.
-            const CVector N0 = planePoints[planeFace.nodes[0]];
-            const CVector N1 = planePoints[planeFace.nodes[1]];
-            const CVector N2 = planePoints[planeFace.nodes[2]];
+            const CVector N0 = planePoints[-planeFace.nodes[0] - 1];
+            const CVector N1 = planePoints[-planeFace.nodes[1] - 1];
+            const CVector N2 = planePoints[-planeFace.nodes[2] - 1];
 
             if (N1.createVector(N0).Mixed(N1.createVector(volumeCenter), N1.createVector(N2)) > 0.0)
             {
@@ -397,21 +397,45 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                 const int& changeFaceId     = std::get<1>(faceSplit[i]);
                 const int& newFaceId        = std::get<2>(faceSplit[i]);
 
+
                 CIrregFace& initialFace = faces[initialFaceId];
-                if (changeFaceId != -1) // индексы в cells ссылаются на ту же самую грань, хоть она и стала новой.
-                    initialFace = resultFaces[0][changeFaceId];
-                if (newFaceId != -1)
+                CIrregCell& initialCell = cells[cellNumber];
+
+                if (changeFaceId == -1 && newFaceId != -1)
                 {
+                    newCell.facesInd.push_back(initialFaceId); // новая клетка имеет ту грань нетронутой, кроме связи.
+
+                    initialFace.cell1 == cellNumber ? initialFace.cell1 = newCellId : initialFace.cell2 = newCellId; // нетронутая грань теперь вместо изначальной клетки ссылается на новую.
+
+                    *std::find(initialCell.facesInd.begin(), initialCell.facesInd.end(), initialFaceId) = -1; // исходная клетка больше не имеет доступа к данной грани. (пока имеет, потом уберём)
+                }
+                else if (changeFaceId != -1 && newFaceId != -1) // лишь в этом случае исходная грань будет разрезана
+                {
+                    initialFace = resultFaces[0][changeFaceId]; // заменяем саму исходную грань на новую. Связь от соседней клетки сохранена, но нужно ещё.
+
                     const int nID = faces.size();
-                    faces.push_back(resultFaces[1][newFaceId]);
+                    faces.push_back(resultFaces[1][newFaceId]); // добавили оставшуюся часть грани
 
                     const int& cell1ID = faces[nID].cell1;
                     const int& cell2ID = faces[nID].cell2;
 
-                    cells[cell1ID == newCellId ? cell2ID : cell1ID].facesInd.push_back(nID);
-                    newCell.facesInd.push_back(nID);
-                }
+                    const int& adjacentCellId = cell1ID == newCellId ? cell2ID : cell1ID; // определили соседнюю клетку, пока ещё не имеющую связь с новой
 
+                    if (adjacentCellId != -1)   // если исходная клетка была не граничной, то добавляем новую связть к соседней клетке.
+                        cells[adjacentCellId].facesInd.push_back(nID);
+
+                    newCell.facesInd.push_back(nID); // и сама новая клетка теперь знает о новой грани
+                }
+                //else if (changeFaceId != -1 && newFaceId == -1) // ничего не меняем, связи все есть.
+                //{
+                //    
+                //}
+                else
+                    throw std::exception("Получилось так, что узлы оказались ни по одно из сторон от плоскости. Глупость!\n"); // не должен выбрасываться никогда!
+
+                // удаляем из исходной ячейки связи с теми гранями, к которым больше нет доступа.
+                std::vector<int>& ininitalCellFaces = initialCell.facesInd;
+                ininitalCellFaces.erase(std::remove(ininitalCellFaces.begin(), ininitalCellFaces.end(), -1), ininitalCellFaces.end()); 
             }
 
             return { cellNumber, newCellId };
@@ -422,6 +446,9 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
             //resultCells.clear(); resultCells.resize(2);
             resultFaces[0].clear();
             resultFaces[1].clear();
+            planePoints.clear();
+            rightUniquiePlanePoints.clear();
+            faceSplit.clear();
             // обновляем номера
             //newFaceId = faces.size(); 
             newNodeId = 0;
