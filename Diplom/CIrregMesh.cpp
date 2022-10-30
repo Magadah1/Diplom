@@ -431,7 +431,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                 //    
                 //}
                 else
-                    throw std::exception("Получилось так, что узлы оказались ни по одно из сторон от плоскости. Глупость!\n"); // не должен выбрасываться никогда!
+                    throw std::exception("Получилось так, что узлы оказались ни по одну из сторон от плоскости. Глупость!\n"); // не должен выбрасываться никогда!
 
                 // удаляем из исходной ячейки связи с теми гранями, к которым больше нет доступа.
                 std::vector<int>& ininitalCellFaces = initialCell.facesInd;
