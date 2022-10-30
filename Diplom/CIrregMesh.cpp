@@ -481,8 +481,11 @@ CSurfaceNode CIrregMesh::getCellCenter(const CIrregCell& cell) const noexcept
 {
     std::vector<int> allNodes;
     for (int faceId = 0; faceId < cell.facesInd.size(); ++faceId)
-        for (int nodeId = 0; nodeId < faces[faceId].nodes.size(); ++nodeId)
-            allNodes.push_back(faces[faceId].nodes[nodeId]);
+    {
+        const CIrregFace& face = faces[cell.facesInd[faceId]];
+        for (int nodeId = 0; nodeId < face.nodes.size(); ++nodeId)
+            allNodes.push_back(face.nodes[nodeId]);
+    }
 
     std::sort(allNodes.begin(), allNodes.end());
     allNodes.erase(std::unique(allNodes.begin(), allNodes.end()), allNodes.end());
@@ -515,7 +518,7 @@ std::vector<Tetrahedron> CIrregMesh::spliteCellByTetrahedrons(const CIrregCell& 
 
     for (int faceId = 0; faceId < cell.facesInd.size(); ++faceId)
     {
-        const CIrregFace& face = faces[faceId];
+        const CIrregFace& face = faces[cell.facesInd[faceId]];
 
         CSurfaceNode faceCenter = getFaceCenter(face);
 

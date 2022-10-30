@@ -43,7 +43,7 @@ int main(int argc, char** argv)
 
 	try
 	{
-		testMesh.sayInfo(std::cout);
+		//testMesh.sayInfo(std::cout);
 		testMesh.FindContactBorder(0, { 0,0,0 }, { 1,1,1 }, 0.52);
 	}
 	catch (const std::exception& e)
