@@ -25,8 +25,6 @@ void glVertex3f(const CPoint& p)
 }
 
 void processSpecialKeys(int key, int x, int y) {
-	if (key == 27)
-		exit(0);
 
 	if (key == GLUT_KEY_LEFT)
 	{
@@ -250,7 +248,7 @@ int main(int argc, char** argv)
 	try
 	{
 		testMesh.sayInfo(std::cout);
-		testMesh.FindContactBorder(0, { 0,0,0 }, { 1,1,1 }, 0.5643);
+		testMesh.FindContactBorder(0, { 0,0,0 }, { 1,1,0 }, 0.7);
 		testMesh.sayInfo(std::cout);
 	}
 	catch (const std::exception& e)

@@ -33,7 +33,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
     std::vector<FaceSplitting> faceSplit; // Связи старых сторон с потенкицально новыми.
     faceSplit.reserve(cell.facesInd.size());
     //
-
+    size_t iterCRITICAL{};
     // БЛОК 1. РАЗБИЕНИЕ КЛЕТКИ НА 2
     while (true)
     {
@@ -246,12 +246,12 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                         break;
                 } // на этом этапе найдена грань, содержащая соседнюю точку, отличная от текущей.
 
-                nextNodeId = 0;
+                nextNodeId = 0; // тут надо прикол
                 const CIrregFace& face = resultFaces[0][startFaceId];
                 for (size_t nodeId = 0; nodeId < face.nodes.size() && !nextNodeId; ++nodeId)
                     if (face.nodes[nodeId] < 0 && face.nodes[nodeId] != startNodeID)
                         nextNodeId = face.nodes[nodeId]; // на этом этапе найдена следующая соседняя точка.
-
+                
                 startNodeID = nextNodeId; // чтобы идти дальше
 
             } while (nextNodeId != initialeNodeID);
@@ -426,10 +426,10 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
 
                     newCell.facesInd.push_back(nID); // и сама новая клетка теперь знает о новой грани
                 }
-                //else if (changeFaceId != -1 && newFaceId == -1) // ничего не меняем, связи все есть.
-                //{
-                //    
-                //}
+                else if (changeFaceId != -1 && newFaceId == -1) // ничего не меняем, связи все есть.
+                {
+                    
+                }
                 else
                     throw std::exception("Получилось так, что узлы оказались ни по одну из сторон от плоскости. Глупость!\n"); // не должен выбрасываться никогда!
 
@@ -460,6 +460,12 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                 startPoint = mid;
 
             mid = (CVector(startPoint) + endPoint) / 2.;
+            ++iterCRITICAL;
+            if (iterCRITICAL >= 1'000'000)
+                throw std::exception("Было более миллиона итераций! Возможно границы постоения плоскости заданы не верно или между ними нет возможности найти точку, дающую нужный объём отсечения!\n");
+
+            if ((CVector(startPoint) - endPoint).Length() < eps)
+                throw std::exception("Границы построения плоскости слишком сблизились!\n");
         }
     }
 
