@@ -216,6 +216,11 @@ int main(int argc, char** argv)
 	testMesh.nodes.push_back({ 1,0,1 }); //5 
 	testMesh.nodes.push_back({ 1,1,0 }); //6
 	testMesh.nodes.push_back({ 1,1,1 }); //7
+	testMesh.nodes.push_back({ 1,0.5,0.5 }); //8
+	testMesh.nodes.push_back({ 1,0.5,1 }); //9
+	testMesh.nodes.push_back({ 1,1,0.5 }); //10
+	testMesh.nodes.push_back({ 1,0.5,0 }); //11
+	testMesh.nodes.push_back({ 1,0,0.5 }); //12
 
 	CIrregFace testFace;
 	testFace.cell1 = 0;
@@ -236,11 +241,23 @@ int main(int argc, char** argv)
 	testFace.nodes = { 1,0,2,3 };
 	testMesh.faces.push_back(testFace);
 
-	testFace.nodes = { 7,6,4,5 };
+	//testFace.nodes = { 7,6,4,5 };
+	//testMesh.faces.push_back(testFace);
+
+	testFace.nodes = { 5,9,8,12 };
+	testMesh.faces.push_back(testFace);
+
+	testFace.nodes = { 9,7,10,8 };
+	testMesh.faces.push_back(testFace);
+
+	testFace.nodes = { 8,10,6,11 };
+	testMesh.faces.push_back(testFace);
+
+	testFace.nodes = { 12,8,11,4 };
 	testMesh.faces.push_back(testFace);
 
 	CIrregCell testCell;
-	testCell.facesInd = { 0,1,2,3,4,5 };
+	testCell.facesInd = { 0,1,2,3,4,5,6,7,8 };
 	testMesh.cells.push_back(testCell);
 
 	initialTestMesh = testMesh;
@@ -248,7 +265,7 @@ int main(int argc, char** argv)
 	try
 	{
 		testMesh.sayInfo(std::cout);
-		testMesh.FindContactBorder(0, { 0,0,0 }, { 1,1,0 }, 0.7);
+		testMesh.FindContactBorder(0, { 0,0,0 }, { 0,0,1 }, 0.7);
 		testMesh.sayInfo(std::cout);
 	}
 	catch (const std::exception& e)

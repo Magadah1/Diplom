@@ -104,7 +104,10 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                                 duplicatePoint = true;
 
                         if (!duplicatePoint)
-                            planePoints.push_back(Node1); --newNodeId;
+                        {
+                            planePoints.push_back(Node1); 
+                            --newNodeId;
+                        }
                     }
                     else if (!Node1V || !Node2V) // одна точка на плоскости. ƒруга€ по какую-то сторону
                     {
@@ -177,14 +180,16 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
             }
 
             FaceSplitting split((int)faceID, (int)resultFaces[0].size(), (int)resultFaces[1].size());
-            if (!newVolumeFace.nodes.size())
+            if (/*!newVolumeFace.nodes.size() || */newVolumeFace.nodes.size() < 3)
                 std::get<1>(split) = -1;
-            if (!newOtherFace.nodes.size())
+            if (/*!newOtherFace.nodes.size() ||*/ newOtherFace.nodes.size() < 3)
                 std::get<2>(split) = -1;
             faceSplit.push_back(split);
 
-            resultFaces[0].push_back(newVolumeFace);
-            resultFaces[1].push_back(newOtherFace);
+            if (std::get<1>(split) != -1)
+                resultFaces[0].push_back(newVolumeFace);
+            if (std::get<2>(split) != -1)
+                resultFaces[1].push_back(newOtherFace);
             newVolumeFace.nodes.clear();
             newOtherFace.nodes.clear();
         }
@@ -234,7 +239,8 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
 
                     for (size_t nodeId = 0; nodeId < face.nodes.size(); ++nodeId)
                     {
-                        if (face.nodes[nodeId] == startNodeID && faceID != startFaceId)
+                        if (face.nodes[nodeId] == startNodeID && faceID != startFaceId 
+                            && std::count_if(face.nodes.begin(), face.nodes.end(), std::bind(std::less<int>(), std::placeholders::_1, 0)) > 1)
                         {
                             startFaceId = faceID;
                             was = true;
