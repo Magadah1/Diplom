@@ -7,38 +7,39 @@
 static CIrregMesh testMesh;
 static CIrregMesh initialTestMesh;
 
-enum class WhatToDraw
-{
-	NOTHING,
-	INITIAL,
-	FIRST,
-	SECOND,
-	BOTH,
-	COUNT // просто сколько их
-};
-
-static WhatToDraw wtd = WhatToDraw::INITIAL;
+static int wtd = -1; // -1 - ничего не рисуем. size() - рисуем все. Другое число - номер клетки, который рисуем.
+static int gw = 1300, gh = 1300;
 
 void glVertex3f(const CPoint& p)
 {
 	glVertex3f(p.X(), p.Y(), p.Z());
 }
 
+void setRandColor(int i)
+{
+	srand(i * 123 + 1678862);
+	int r = rand() % 256; double _r = r / 255.;
+	int g = rand() % 256; double _g = g / 255.;
+	int b = rand() % 256; double _b = b / 255.;
+	glColor3f(_r, _g, _b);
+}
+
 void processSpecialKeys(int key, int x, int y) {
 
 	if (key == GLUT_KEY_LEFT)
 	{
-		if (wtd == WhatToDraw::NOTHING)
-			wtd = WhatToDraw::BOTH;
+		if (wtd == -1)
+			wtd = testMesh.cells.size();
 		else
-			wtd = static_cast<WhatToDraw>(static_cast<int>(wtd) - 1);
+			--wtd;
+
 	}
 	else if (key == GLUT_KEY_RIGHT)
 	{
-		if (wtd == WhatToDraw::BOTH)
-			wtd = WhatToDraw::NOTHING;
+		if (wtd == testMesh.cells.size())
+			wtd = -1;
 		else
-			wtd = static_cast<WhatToDraw>(static_cast<int>(wtd) + 1);
+			++wtd;
 	}
 }
 
@@ -52,6 +53,8 @@ void renderScene()
 	glRotatef(-90, 1, 0, 0);
 	glRotatef(225, 0, 0,1);
 	glRotatef(45, -1, 1, 0);
+
+
 
 	glBegin(GL_LINES);
 	{
@@ -67,41 +70,36 @@ void renderScene()
 		glVertex3f(0, 0, 0);
 		glVertex3f(0, 0, 2);
 	}
+	glEnd();
 
-
-	switch (wtd)
+	if (wtd == testMesh.cells.size())
 	{
-	case WhatToDraw::NOTHING:
-		// пусто
-		break;
-	case WhatToDraw::INITIAL:
-	{
-
-		glColor3f(1, 1, 1);
-		
-		const CIrregCell& cell = initialTestMesh.cells[0];
-		for (size_t faceID = 0; faceID < cell.facesInd.size(); ++faceID)
+		for (size_t i = 0; i < wtd; ++i)
 		{
-			const CIrregFace& face = initialTestMesh.faces[cell.facesInd[faceID]];
-			glBegin(GL_LINE_LOOP);
+			const CIrregCell& cell = testMesh.cells[i]; 
+			setRandColor(i);
+			
+			for (size_t faceID = 0; faceID < cell.facesInd.size(); ++faceID)
 			{
-				for (size_t nodeId = 0; nodeId < face.nodes.size(); ++nodeId)
+				const CIrregFace& face = testMesh.faces[cell.facesInd[faceID]];
+				glBegin(GL_LINE_LOOP);
 				{
-					const int& nID = face.nodes[nodeId];
-					glVertex3f(initialTestMesh.nodes[nID]);
+					for (size_t nodeId = 0; nodeId < face.nodes.size(); ++nodeId)
+					{
+						const int& nID = face.nodes[nodeId];
+						glVertex3f(testMesh.nodes[nID]);
+					}
 				}
+				glEnd();
 			}
-			glEnd();
 		}
 
 	}
-		break;
-	case WhatToDraw::FIRST:
+	else if (wtd != -1)
 	{
+		const CIrregCell& cell = testMesh.cells[wtd];
+		setRandColor(wtd);
 
-		glColor3f(1, 0, 1);
-
-		const CIrregCell& cell = testMesh.cells[0];
 		for (size_t faceID = 0; faceID < cell.facesInd.size(); ++faceID)
 		{
 			const CIrregFace& face = testMesh.faces[cell.facesInd[faceID]];
@@ -115,86 +113,14 @@ void renderScene()
 			}
 			glEnd();
 		}
-
 	}
-		break;
-	case WhatToDraw::SECOND:
-	{
-
-		glColor3f(0, 1, 1);
-
-		const CIrregCell& cell = testMesh.cells[1];
-		for (size_t faceID = 0; faceID < cell.facesInd.size(); ++faceID)
-		{
-			const CIrregFace& face = testMesh.faces[cell.facesInd[faceID]];
-			glBegin(GL_LINE_LOOP);
-			{
-				for (size_t nodeId = 0; nodeId < face.nodes.size(); ++nodeId)
-				{
-					const int& nID = face.nodes[nodeId];
-					glVertex3f(testMesh.nodes[nID]);
-				}
-			}
-			glEnd();
-		}
-
-	}
-		break;
-	case WhatToDraw::BOTH:
-	{
-		glColor3f(1, 0,	1);
-
-		const CIrregCell& cell1 = testMesh.cells[0];
-		for (size_t faceID = 0; faceID < cell1.facesInd.size(); ++faceID)
-		{
-			const CIrregFace& face = testMesh.faces[cell1.facesInd[faceID]];
-			glBegin(GL_LINE_LOOP);
-			{
-				for (size_t nodeId = 0; nodeId < face.nodes.size(); ++nodeId)
-				{
-					const int& nID = face.nodes[nodeId];
-					glVertex3f(testMesh.nodes[nID]);
-				}
-			}
-			glEnd();
-		}
-
-		glColor3f(0, 1, 1);
-
-		const CIrregCell& cell2 = testMesh.cells[1];
-		for (size_t faceID = 0; faceID < cell2.facesInd.size(); ++faceID)
-		{
-			const CIrregFace& face = testMesh.faces[cell2.facesInd[faceID]];
-			glBegin(GL_LINE_LOOP);
-			{
-				for (size_t nodeId = 0; nodeId < face.nodes.size(); ++nodeId)
-				{
-					const int& nID = face.nodes[nodeId];
-					glVertex3f(testMesh.nodes[nID]);
-				}
-			}
-			glEnd();
-		}
-
-	}
-		break;
-	case WhatToDraw::COUNT:
-		// пусто
-		break;
-	default:
-		break;
-	}
-
 
 	glutSwapBuffers();
 }
 
 void changeSize(int w, int h) 
 {
-	if (h == 0)
-		h = 1;
-	float ratio = 1.0 * w / h;
-
+	gw = w; gh = h;
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
@@ -247,7 +173,10 @@ int main(int argc, char** argv)
 	testFace.nodes = { 5,9,8,12 };
 	testMesh.faces.push_back(testFace);
 
-	testFace.nodes = { 9,7,10,8 };
+	testFace.nodes = { 9,7,8 };
+	testMesh.faces.push_back(testFace);
+
+	testFace.nodes = { 7,10,8 };
 	testMesh.faces.push_back(testFace);
 
 	testFace.nodes = { 8,10,6,11 };
@@ -257,15 +186,19 @@ int main(int argc, char** argv)
 	testMesh.faces.push_back(testFace);
 
 	CIrregCell testCell;
-	testCell.facesInd = { 0,1,2,3,4,5,6,7,8 };
+	testCell.facesInd = { 0,1,2,3,4,5,6,7,8,9 };
 	testMesh.cells.push_back(testCell);
 
 	initialTestMesh = testMesh;
+	std::pair<int, int> getResult;
 
 	try
 	{
 		testMesh.sayInfo(std::cout);
-		testMesh.FindContactBorder(0, { 0,0,0 }, { 0,0,1 }, 0.7);
+		getResult = testMesh.FindContactBorder(0, { 1,0,0 }, { 1,1,1 }, 0.5);
+		std::cout << "\n\n-----------------------------Iterations = " << getResult.second << " -----------------------------\n\n";
+		getResult = testMesh.FindContactBorder(0, { 1,0,0 }, { 1,1,1 }, 0.2);
+		std::cout << "\n\n-----------------------------Iterations = " << getResult.second << " -----------------------------\n\n";
 		testMesh.sayInfo(std::cout);
 	}
 	catch (const std::exception& e)
@@ -276,7 +209,7 @@ int main(int argc, char** argv)
 
 	glutInit(&argc, argv);
 	glutInitWindowPosition(100, 100);
-	glutInitWindowSize(1300, 900);
+	glutInitWindowSize(gw, gh);
 	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
 	glutCreateWindow("Отображение");
 	glutDisplayFunc(renderScene);

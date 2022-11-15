@@ -33,7 +33,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
     std::vector<FaceSplitting> faceSplit; // Связи старых сторон с потенкицально новыми.
     faceSplit.reserve(cell.facesInd.size());
     //
-    size_t iterCRITICAL{};
+    size_t iterCRITICAL{ 1 };
     // БЛОК 1. РАЗБИЕНИЕ КЛЕТКИ НА 2
     while (true)
     {
@@ -95,9 +95,6 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                 {
                     if (Node1V == Node2V && !Node1V) // обе точки на плоскости, добавляем первую из них в каждую из новых клеток и добавляем к новой стороне, что образуется плоскостью.
                     {
-                        newVolumeFace.nodes.push_back(Node1ID);
-                        newOtherFace.nodes.push_back(Node1ID);
-
                         duplicatePoint = false;
                         for (duplicateId = 0; duplicateId < planePoints.size() && !duplicatePoint; ++duplicateId)
                             if (planePoints[duplicateId] == Node1)
@@ -105,8 +102,14 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
 
                         if (!duplicatePoint)
                         {
-                            planePoints.push_back(Node1); 
-                            --newNodeId;
+                            planePoints.push_back(Node1); --newNodeId;
+                            newVolumeFace.nodes.push_back(newNodeId);
+                            newOtherFace.nodes.push_back(newNodeId);
+                        }
+                        else
+                        {
+                            newVolumeFace.nodes.push_back(-duplicateId);
+                            newOtherFace.nodes.push_back(-duplicateId);
                         }
                     }
                     else if (!Node1V || !Node2V) // одна точка на плоскости. Другая по какую-то сторону
@@ -444,7 +447,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                 ininitalCellFaces.erase(std::remove(ininitalCellFaces.begin(), ininitalCellFaces.end(), -1), ininitalCellFaces.end()); 
             }
 
-            return { cellNumber, newCellId };
+            return { newCellId, iterCRITICAL};
         }
         else
         {
