@@ -39,13 +39,11 @@ public:
 	{
 		const double value = getValue(p);
 
-		return value > 0 ? 1 : value < 0 ? -1 : 0;
+		return abs(value) > 1e-8 ? (value > 0 ? 1 : (value < 0 ? -1 : 0)): 0;
 	}
 	inline double getNormedValue(const CPoint* p) const
 	{
-		const double value = getValue(p);
-
-		return value ? value / abs(value) : 0.;
+		return getNormedValue(*p);
 	}
 	inline double recalcD(const CPoint& p) noexcept
 	{

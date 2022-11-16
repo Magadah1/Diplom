@@ -136,6 +136,7 @@
     <ClCompile Include="CIrregCell.cpp" />
     <ClCompile Include="CIrregFace.cpp" />
     <ClCompile Include="CIrregMesh.cpp" />
+    <ClCompile Include="CMatrix.cpp" />
     <ClCompile Include="CPoint.cpp" />
     <ClCompile Include="CSideEquation.cpp" />
     <ClCompile Include="CSurfaceNode.cpp" />
@@ -147,6 +148,7 @@
     <ClInclude Include="CIrregCell.h" />
     <ClInclude Include="CIrregFace.h" />
     <ClInclude Include="CIrregMesh.h" />
+    <ClInclude Include="CMatrix.h" />
     <ClInclude Include="CPoint.h" />
     <ClInclude Include="CSideEquation.h" />
     <ClInclude Include="CSurfaceNode.h" />

@@ -1,6 +1,8 @@
 #include <iostream>
+#include <chrono>
 
 #include "CIrregMesh.h"
+#include "CMatrix.h"
 
 #include "glut.h"
 
@@ -130,8 +132,22 @@ void changeSize(int w, int h)
 	glMatrixMode(GL_MODELVIEW);
 }
 
+template <typename OStream>
+void iteract(int cellNumber, CPoint start, CPoint end, double volume, OStream& OUT)
+{
+	std::chrono::steady_clock::time_point startT = std::chrono::steady_clock::now();
+	std::pair<int, int> res = testMesh.FindContactBorder(cellNumber, start, end, volume);
+	std::chrono::steady_clock::time_point endT = std::chrono::steady_clock::now();
+	std::chrono::milliseconds timeDiff = std::chrono::duration_cast<std::chrono::milliseconds>(endT - startT);
+
+	OUT << "\n----Iterations = " << res.second << " with in " << timeDiff.count() << " milliseconds\n----";
+}
+
 int main(int argc, char** argv)
 {
+	CMatrix4x4d m;
+	m.createRotationMatrix(0,0, 90, false);
+
 	setlocale(0, "");
 	// CIrregMesh testMesh;
 	testMesh.nodes.push_back({ 0,0,0 }); //0
@@ -147,6 +163,9 @@ int main(int argc, char** argv)
 	testMesh.nodes.push_back({ 1,1,0.5 }); //10
 	testMesh.nodes.push_back({ 1,0.5,0 }); //11
 	testMesh.nodes.push_back({ 1,0,0.5 }); //12
+
+	for (size_t i = 0; i < testMesh.nodes.size(); ++i)
+		testMesh.nodes[i] = m * testMesh.nodes[i];
 
 	CIrregFace testFace;
 	testFace.cell1 = 0;
@@ -190,21 +209,30 @@ int main(int argc, char** argv)
 	testMesh.cells.push_back(testCell);
 
 	initialTestMesh = testMesh;
-	std::pair<int, int> getResult;
 
 	try
 	{
 		testMesh.sayInfo(std::cout);
-		getResult = testMesh.FindContactBorder(0, { 1,0,0 }, { 1,1,1 }, 0.5);
+		
+		/*getResult = testMesh.FindContactBorder(0, { 1,0,0 }, { 1,1,1 }, 0.5);
 		std::cout << "\n\n-----------------------------Iterations = " << getResult.second << " -----------------------------\n\n";
 		getResult = testMesh.FindContactBorder(0, { 1,0,0 }, { 1,1,1 }, 0.2);
-		std::cout << "\n\n-----------------------------Iterations = " << getResult.second << " -----------------------------\n\n";
+		std::cout << "\n\n-----------------------------Iterations = " << getResult.second << " -----------------------------\n\n";*/
+		/*for (int i = 40; i > -1; --i)
+		{
+			getResult = testMesh.FindContactBorder(40 - i, { 0,0,0 }, { 1,1,1 }, 0.02);
+			std::cout << "\n\n-----------------------------Iterations = " << getResult.second << " -----------------------------\n\n";
+		}*/
+
+
+		iteract(0, testMesh.nodes[0], testMesh.nodes[7], 0.5, std::cout);
+
 		testMesh.sayInfo(std::cout);
 	}
 	catch (const std::exception& e)
 	{
 		std::cout << e.what();
-		return -1;
+		//return -1;
 	}
 
 	glutInit(&argc, argv);
