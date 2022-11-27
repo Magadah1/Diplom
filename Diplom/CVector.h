@@ -92,7 +92,7 @@ public:
     }
     inline bool operator==(const CVector& other) const noexcept
     {
-        return x == other.x && y == other.y && z == other.z;
+        return this->toCSurfaceNode() == other.toCSurfaceNode();
     }
     inline bool operator!=(const CVector& other) const noexcept
     {

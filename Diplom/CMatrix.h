@@ -52,10 +52,10 @@ class CMatrix4x4d
 	: public CMatrix<double, 4, 4>
 {
 public:
-	void createRotationMatrix(double alpha, double betha, double gamma, bool isRadians = true) noexcept;
+	//void createRotationMatrix(double alpha, double betha, double gamma, bool isRadians = true) noexcept;
 	void createRotationMatrix(CVector axis, double tetha, bool isRadians = true) noexcept;
 	void createTransferMatrix(CVector movement) noexcept;
-	void createRTMatrix(CVector movement, double alpha, double betha, double gamma, bool isRadians) noexcept;
+	//void createRTMatrix(CVector movement, double alpha, double betha, double gamma, bool isRadians) noexcept;
 	void createRTMatrix(CVector movement, CVector axis, double tetha, bool isRadians) noexcept;
 
 	void setIdentityMatrix() noexcept;

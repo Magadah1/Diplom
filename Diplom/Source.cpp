@@ -127,7 +127,7 @@ void changeSize(int w, int h)
 	glLoadIdentity();
 
 	glViewport(0, 0, w, h);
-	glOrtho(-2, 2, -2, 2, -2, 2);
+	glOrtho(-4, 4, -4, 4, -4, 4);
 
 	glMatrixMode(GL_MODELVIEW);
 }
@@ -135,18 +135,18 @@ void changeSize(int w, int h)
 template <typename OStream>
 void iteract(int cellNumber, CPoint start, CPoint end, double volume, OStream& OUT)
 {
+	//OUT << "\n----Volume = " << volume;
 	std::chrono::steady_clock::time_point startT = std::chrono::steady_clock::now();
 	std::pair<int, int> res = testMesh.FindContactBorder(cellNumber, start, end, volume);
 	std::chrono::steady_clock::time_point endT = std::chrono::steady_clock::now();
-	std::chrono::milliseconds timeDiff = std::chrono::duration_cast<std::chrono::milliseconds>(endT - startT);
+	std::chrono::microseconds timeDiff = std::chrono::duration_cast<std::chrono::microseconds>(endT - startT);
 
-	OUT << "\n----Iterations = " << res.second << " with in " << timeDiff.count() << " milliseconds\n----";
+	//OUT << "\tIterations = " << res.second << " with in " << timeDiff.count() << " milliseconds with volume = " << testMesh.getCellVolume(testMesh.cells[cellNumber]);
 }
 
 int main(int argc, char** argv)
 {
 	CMatrix4x4d m;
-	m.createRotationMatrix(0,0, 90, false);
 
 	setlocale(0, "");
 	// CIrregMesh testMesh;
@@ -164,23 +164,21 @@ int main(int argc, char** argv)
 	testMesh.nodes.push_back({ 1,0.5,0 }); //11
 	testMesh.nodes.push_back({ 1,0,0.5 }); //12
 
-	for (size_t i = 0; i < testMesh.nodes.size(); ++i)
-		testMesh.nodes[i] = m * testMesh.nodes[i];
 
 	CIrregFace testFace;
 	testFace.cell1 = 0;
 	testFace.cell2 = -1;
 	
-	testFace.nodes = {0,4,6,2};
+	testFace.nodes = { 0,4,11,6,2 };
 	testMesh.faces.push_back(testFace);
 
-	testFace.nodes = { 1,3,7,5 };
+	testFace.nodes = { 1,3,7,9,5 };
 	testMesh.faces.push_back(testFace);
 
-	testFace.nodes = { 1,5,4,0 };
+	testFace.nodes = { 1,5,12,4,0 };
 	testMesh.faces.push_back(testFace);
 
-	testFace.nodes = { 3,2,6,7 };
+	testFace.nodes = { 3,2,6,10,7 };
 	testMesh.faces.push_back(testFace);
 
 	testFace.nodes = { 1,0,2,3 };
@@ -210,30 +208,80 @@ int main(int argc, char** argv)
 
 	initialTestMesh = testMesh;
 
-	try
-	{
-		testMesh.sayInfo(std::cout);
-		
-		/*getResult = testMesh.FindContactBorder(0, { 1,0,0 }, { 1,1,1 }, 0.5);
-		std::cout << "\n\n-----------------------------Iterations = " << getResult.second << " -----------------------------\n\n";
-		getResult = testMesh.FindContactBorder(0, { 1,0,0 }, { 1,1,1 }, 0.2);
-		std::cout << "\n\n-----------------------------Iterations = " << getResult.second << " -----------------------------\n\n";*/
-		/*for (int i = 40; i > -1; --i)
+	testMesh.sayInfo(std::cout);
+
+	double minV = 2, rv;
+
+	size_t countGoods{};
+	std::chrono::steady_clock::time_point startT = std::chrono::steady_clock::now();
+	constexpr size_t TOTAL = 1e5;
+	for (size_t j = 0; j < TOTAL; ++j)
+		try
 		{
-			getResult = testMesh.FindContactBorder(40 - i, { 0,0,0 }, { 1,1,1 }, 0.02);
+			/*m.createTransferMatrix({ 
+				-5 + double(rand()) / RAND_MAX * 10,
+				-5 + double(rand()) / RAND_MAX * 10,
+				-5 + double(rand()) / RAND_MAX * 10
+				});*/
+
+			/*m.createRotationMatrix(
+				{
+				-1 + double(rand()) / RAND_MAX * 2,
+				- 1 + double(rand()) / RAND_MAX * 2,
+				- 1 + double(rand()) / RAND_MAX * 2
+				}, rand() % 360, false
+			);*/
+			
+			m.createRTMatrix({
+				-5 + double(rand()) / RAND_MAX * 10,
+				-5 + double(rand()) / RAND_MAX * 10,
+				-5 + double(rand()) / RAND_MAX * 10
+				},
+				{
+				-1 + double(rand()) / RAND_MAX * 2,
+				-1 + double(rand()) / RAND_MAX * 2,
+				-1 + double(rand()) / RAND_MAX * 2
+				},
+				rand() % 360,
+				false
+			);
+
+			//m.setIdentityMatrix();
+
+			testMesh = initialTestMesh;
+			for (size_t i = 0; i < testMesh.nodes.size(); ++i)
+				testMesh.nodes[i] = m * testMesh.nodes[i];
+
+			/*getResult = testMesh.FindContactBorder(0, { 1,0,0 }, { 1,1,1 }, 0.5);
 			std::cout << "\n\n-----------------------------Iterations = " << getResult.second << " -----------------------------\n\n";
-		}*/
+			getResult = testMesh.FindContactBorder(0, { 1,0,0 }, { 1,1,1 }, 0.2);
+			std::cout << "\n\n-----------------------------Iterations = " << getResult.second << " -----------------------------\n\n";*/
+			/*for (int i = 40; i > -1; --i)
+			{
+				getResult = testMesh.FindContactBorder(40 - i, { 0,0,0 }, { 1,1,1 }, 0.02);
+				std::cout << "\n\n-----------------------------Iterations = " << getResult.second << " -----------------------------\n\n";
+			}*/
 
+		rv = double(rand()) / RAND_MAX;
+			iteract(0, testMesh.nodes[0], testMesh.nodes[7], rv, std::cout);
+			//testMesh = initialTestMesh;
+			++countGoods;
+			//testMesh.sayInfo(std::cout);
+		}
+		catch (const std::exception& e)
+		{
+			double v = testMesh.getCellVolume(testMesh.cells[0]);
+			if (v < minV)
+				minV = v;
+			std::cout << e.what();
+			//return -1;
+		}
+		std::chrono::steady_clock::time_point endT = std::chrono::steady_clock::now();
+		std::chrono::seconds timeDiff = std::chrono::duration_cast<std::chrono::seconds>(endT - startT);
 
-		iteract(0, testMesh.nodes[0], testMesh.nodes[7], 0.5, std::cout);
+		std::cout << "\nTotal time = " << timeDiff.count() << " with " << countGoods << " succesfull tries of " << TOTAL << " total tries!\nMinV = " << minV;
 
-		testMesh.sayInfo(std::cout);
-	}
-	catch (const std::exception& e)
-	{
-		std::cout << e.what();
-		//return -1;
-	}
+		return -1;
 
 	glutInit(&argc, argv);
 	glutInitWindowPosition(100, 100);

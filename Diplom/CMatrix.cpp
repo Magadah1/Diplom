@@ -1,28 +1,32 @@
 #include "CMatrix.h"
 
-void CMatrix4x4d::createRotationMatrix(double alpha, double betha, double gamma, bool isRadians) noexcept
-{
-	if (!isRadians) // если в градусах
-	{
-		double k = acos(-1) / 180.;
-
-		alpha *= k;
-		betha *= k;
-		gamma *= k;
-	}
-	setIdentityMatrix();
-
-	mat[0][0] = cos(betha) * cos(gamma); mat[0][1] = -sin(gamma) * cos(betha); mat[0][2] = sin(betha);
-	mat[1][0] = sin(alpha) * sin(betha) * sin(gamma) + sin(gamma) * cos(alpha); mat[1][1] = -sin(alpha) * sin(betha) * sin(gamma) + cos(alpha) * cos(gamma); mat[1][2] = -sin(alpha) * cos(betha);
-	mat[2][0] = sin(alpha) * sin(gamma) - sin(betha) * cos(alpha) * cos(gamma); mat[2][1] = sin(alpha) * cos(gamma) + sin(betha) * sin(gamma) * cos(alpha); mat[2][2] = cos(alpha) * cos(betha);
-}
+//void CMatrix4x4d::createRotationMatrix(double alpha, double betha, double gamma, bool isRadians) noexcept
+//{
+//	if (!isRadians) // если в градусах
+//	{
+//		double k = acos(-1) / 180.;
+//
+//		alpha *= k;
+//		betha *= k;
+//		gamma *= k;
+//	}
+//	setIdentityMatrix();
+//
+//	mat[0][0] = cos(betha) * cos(gamma); mat[0][1] = -sin(gamma) * cos(betha); mat[0][2] = sin(betha);
+//	mat[1][0] = sin(alpha) * sin(betha) * sin(gamma) + sin(gamma) * cos(alpha); mat[1][1] = -sin(alpha) * sin(betha) * sin(gamma) + cos(alpha) * cos(gamma); mat[1][2] = -sin(alpha) * cos(betha);
+//	mat[2][0] = sin(alpha) * sin(gamma) - sin(betha) * cos(alpha) * cos(gamma); mat[2][1] = sin(alpha) * cos(gamma) + sin(betha) * sin(gamma) * cos(alpha); mat[2][2] = cos(alpha) * cos(betha);
+//}
 
 void CMatrix4x4d::createRotationMatrix(CVector axis, double tetha, bool isRadians) noexcept
 {
+	setIdentityMatrix();
+	if (!tetha)
+		return;
+
 	if (!isRadians)
 		tetha *= acos(-1) / 180.;
 
-	setIdentityMatrix();
+	axis.Norm();
 
 	mat[0][0] = cos(tetha) + (1 - cos(tetha)) * axis.X() * axis.X(); mat[0][1] = (1 - cos(tetha)) * axis.X() * axis.Y() - sin(tetha) * axis.Z(); mat[0][2] = (1 - cos(tetha)) * axis.X() * axis.Z() + sin(tetha) * axis.Y();
 	mat[1][0] = (1 - cos(tetha)) * axis.Y() * axis.X() + sin(tetha) * axis.Z(); mat[1][1] = cos(tetha) + (1 - cos(tetha)) * axis.Y() * axis.Y(); mat[1][2] = (1 - cos(tetha)) * axis.Y() * axis.Z() - sin(tetha) * axis.X();
@@ -36,15 +40,15 @@ void CMatrix4x4d::createTransferMatrix(CVector movement) noexcept
 	mat[1][3] = movement.Y();
 	mat[2][3] = movement.Z();
 }
-
-void CMatrix4x4d::createRTMatrix(CVector movement, double alpha, double betha, double gamma, bool isRadians) noexcept
-{
-	createRotationMatrix(alpha, betha, gamma, isRadians);
-
-	mat[0][3] = movement.X();
-	mat[1][3] = movement.Y();
-	mat[2][3] = movement.Z();
-}
+//
+//void CMatrix4x4d::createRTMatrix(CVector movement, double alpha, double betha, double gamma, bool isRadians) noexcept
+//{
+//	createRotationMatrix(alpha, betha, gamma, isRadians);
+//
+//	mat[0][3] = movement.X();
+//	mat[1][3] = movement.Y();
+//	mat[2][3] = movement.Z();
+//}
 
 void CMatrix4x4d::createRTMatrix(CVector movement, CVector axis, double tetha, bool isRadians) noexcept
 {
@@ -59,7 +63,7 @@ void CMatrix4x4d::setIdentityMatrix() noexcept
 {
 	for (size_t i = 0; i < M(); ++i)
 		for (size_t j = 0; j < N(); ++j)
-			mat[i][j] = i == j ? 1 : 0;
+			mat[i][j] = i == j;
 }
 
 CPoint CMatrix4x4d::operator*(const CPoint& p) const noexcept
