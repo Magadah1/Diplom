@@ -6,6 +6,9 @@ CIrregMesh::CIrregMesh() noexcept
 
 std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint startPoint, CPoint endPoint, const double& volume)
 {
+    if (cellNumber < 0 || cellNumber >= cells.size())
+        throw std::exception("ячейки с таким номером не существует!\n");
+
     constexpr double eps = 1e-8; // по€вилс€ в C++11, если не работает - заменить на const double
     const CIrregCell& cell = cells[cellNumber]; // получаем клетку сетки
 
@@ -478,6 +481,55 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
         }
     }
 
+}
+
+void CIrregMesh::spliteFaceByTriangles(const int& faceNumber)
+{
+    if (faceNumber < 0 || faceNumber >= faces.size())
+        throw std::exception("√рани с таким номером не существует!\n");
+
+    CIrregFace& face = faces[faceNumber];
+    size_t faceNodesCount = face.nodes.size();
+    CIrregCell* faceCells[2]{};
+    faceCells[0] = face.cell1 != -1 ? &cells[face.cell1] : nullptr;
+    faceCells[1] = face.cell2 != -1 ? &cells[face.cell2] : nullptr;
+
+    CSurfaceNode center = getFaceCenter(face);
+    int NDI = nodes.size();
+    int NFI = faces.size();
+
+    CIrregFace tempFace;
+    tempFace.cell1 = face.cell1;
+    tempFace.cell2 = face.cell2;
+    std::vector<CIrregFace> newFaces(faceNodesCount);
+
+    nodes.push_back(center);
+    for (size_t i = 0; i < faceNodesCount; ++i)
+    {
+        const int& nId1 = face.nodes[i];
+        const int& nId2 = face.nodes[(i + 1ull) % faceNodesCount];
+
+        tempFace.nodes = { nId1, nId2, NDI };
+
+        newFaces[i] = tempFace;
+    }
+
+    for (size_t i = 0; i < faceNodesCount; ++i)
+        if (!i)
+            faces[faceNumber] = newFaces[i];
+        else
+            faces.push_back(newFaces[i]);
+
+    for (size_t i = 0; i < 2; ++i)
+    {
+        if (!faceCells[i])
+            continue;
+
+        CIrregCell& cell = *faceCells[i];
+
+        for (size_t nfID = 0; nfID < faceNodesCount - 1; ++nfID)
+            cell.facesInd.push_back(NFI + nfID);
+    }
 }
 
 double CIrregMesh::getCellVolume(const CIrregCell& cell) const noexcept

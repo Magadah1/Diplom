@@ -17,6 +17,8 @@ public:
 
 	std::pair<int, int> FindContactBorder(const int& cellNumber, CPoint startPoint, CPoint endPoint, const double& volume);
 
+	void spliteFaceByTriangles(const int& faceNumber);
+
 	double getCellVolume(const CIrregCell& cell) const noexcept;
 
 	template<typename OStream>
