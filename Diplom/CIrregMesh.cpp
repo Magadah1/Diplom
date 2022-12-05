@@ -156,6 +156,12 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
 
                         //planePoints.push_back(interPoint); --newNodeId;
 
+                        // мейнппейрмн!
+                        /*if (Node1V == -1)
+                        {
+                            if (face.cell1 == cellNumber)
+                        }*/
+
                         if (Node1V == -1)
                             newVolumeFace.nodes.push_back(Node1ID);
                         else
@@ -180,6 +186,14 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                         {
                             newVolumeFace.nodes.push_back(-duplicateId);
                             newOtherFace.nodes.push_back(-duplicateId);
+                        }
+
+                        if (face.cell1 != cellNumber)
+                        {
+                            if (Node1V == -1)
+                                std::swap(newVolumeFace.nodes[newVolumeFace.nodes.size() - 1], newVolumeFace.nodes[newVolumeFace.nodes.size() - 2]);
+                            else
+                                std::swap(newOtherFace.nodes[newOtherFace.nodes.size() - 1], newOtherFace.nodes[newOtherFace.nodes.size() - 2]);
                         }
                     }
                 }

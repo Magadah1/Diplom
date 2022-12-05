@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <thread>
 
 #include "CIrregMesh.h"
 #include "CMatrix.h"
@@ -69,6 +70,10 @@ void processSpecialKeys(int key, int x, int y) {
 		else
 			++wtd;
 	}
+	else if (key == GLUT_KEY_UP)
+		glScalef(1.1, 1.1, 1.1);
+	else if (key == GLUT_KEY_DOWN)
+		glScalef(0.9, 0.9, 0.9);
 }
 
 void renderScene()
@@ -170,7 +175,12 @@ void iteract(int cellNumber, CPoint start, CPoint end, double volume, OStream& O
 	std::chrono::microseconds timeDiff = std::chrono::duration_cast<std::chrono::microseconds>(endT - startT);
 
 	if (log)
-		OUT << "\tIterations = " << res.second << " with in " << timeDiff.count() << " milliseconds with volume = " << testMesh.getCellVolume(testMesh.cells[cellNumber]);
+		OUT << "\tIterations = " << res.second << " with in " << timeDiff.count() << " microseconds with volume = " << testMesh.getCellVolume(testMesh.cells[cellNumber]);
+}
+
+void stupidCOUT()
+{
+	testMesh.sayInfo(std::cout);
 }
 
 int main(int argc, char** argv)
@@ -214,11 +224,65 @@ int main(int argc, char** argv)
 	testMesh.cells.push_back(testCell);
 
 	initialTestMesh = testMesh;
-	const double cellVolume = initialTestMesh.getCellVolume(initialTestMesh.cells[0]);
+	
+
+	// Делим на 3 "Высоких" параллелепипеда.
+	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[4], 1. / 3);
+	testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[4], 1. / 3);
+
+	// Отсекаем 1/3 от "Высоких" параллелепипедов.
+	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
+	testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
+	testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
+
+	// Делим оставшиеся 2/3 на пополам. По итогу получаем "Длинные" параллелепипеды.
+	testMesh.FindContactBorder(3, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
+	testMesh.FindContactBorder(4, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
+	testMesh.FindContactBorder(5, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
+
+	// Делим нижние "Длинные" параллелепипеды на нужные кубики.
+	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+
+	// Делим средние "Длинные" параллелепипеды на нужные кубики.
+	testMesh.FindContactBorder(3, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	testMesh.FindContactBorder(4, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	testMesh.FindContactBorder(5, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	testMesh.FindContactBorder(3, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	testMesh.FindContactBorder(4, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	testMesh.FindContactBorder(5, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+
+	// Делим верхние "Длинные" параллелепипеды на нужные кубики.
+	testMesh.FindContactBorder(6, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	testMesh.FindContactBorder(7, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	testMesh.FindContactBorder(8, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	testMesh.FindContactBorder(6, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	testMesh.FindContactBorder(7, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	testMesh.FindContactBorder(8, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+
+	std::thread t(stupidCOUT);
+
+	//testMesh.sayInfo(std::cout);
+
+	/*const double cellVolume = initialTestMesh.getCellVolume(initialTestMesh.cells[0]);
 
 	testMesh.sayInfo(std::cout);
 
-	constexpr size_t total = 1e3;
+	srand(1234512);
+
+	for (size_t i = 0; i < 250; ++i)
+		testMesh.spliteFaceByTriangles(rand() % testMesh.faces.size());
+
+	iteract(0, testMesh.nodes[0], testMesh.nodes[7], 0.5231, std::cout, true);
+
+	std::thread t(stupidCOUT);*/
+	//testMesh.sayInfo(std::cout);
+
+	/*constexpr size_t total = 1e3;
 	size_t good{};
 	for (size_t i = 0; i < total; ++i)
 	{
@@ -260,7 +324,7 @@ int main(int argc, char** argv)
 	}
 	std::cout << "Good = " << good << "\terrors = " << total - good << '\n';
 	testMesh.sayInfo(std::cout);
-	return -2;
+	return -2;*/
 
 
 	// CIrregMesh testMesh;
@@ -437,4 +501,5 @@ int main(int argc, char** argv)
 	glutSpecialFunc(processSpecialKeys);
 	glutKeyboardFunc(processNormalKeys);
 	glutMainLoop();
+	t.join();
 }
