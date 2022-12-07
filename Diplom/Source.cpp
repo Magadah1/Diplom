@@ -229,40 +229,76 @@ int main(int argc, char** argv)
 	// Делим на 3 "Высоких" параллелепипеда.
 	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[4], 1. / 3);
 	testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[4], 1. / 3);
-
+	
 	// Отсекаем 1/3 от "Высоких" параллелепипедов.
-	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
-	testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
-	testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
-
+	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[1], 1. / 9); // точка на ребро!
+	//testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
+	//testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
+	
 	// Делим оставшиеся 2/3 на пополам. По итогу получаем "Длинные" параллелепипеды.
-	testMesh.FindContactBorder(3, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
-	testMesh.FindContactBorder(4, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
-	testMesh.FindContactBorder(5, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
-
+	//testMesh.FindContactBorder(3, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
+	//testMesh.FindContactBorder(4, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
+	//testMesh.FindContactBorder(5, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
+	
 	// Делим нижние "Длинные" параллелепипеды на нужные кубики.
-	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
-	testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
-	testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	//testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	//testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	//testMesh.sayInfo(std::cout);
+	//testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[2], 2. / 27); // тут появлялись дубликаты вершин
+	//testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	//testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	//testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	//
+	//// Делим средние "Длинные" параллелепипеды на нужные кубики.
+	//testMesh.FindContactBorder(3, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	//testMesh.FindContactBorder(4, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	//testMesh.FindContactBorder(5, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	//testMesh.FindContactBorder(3, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	//testMesh.FindContactBorder(4, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	//testMesh.FindContactBorder(5, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	//
+	//// Делим верхние "Длинные" параллелепипеды на нужные кубики.
+	//testMesh.FindContactBorder(6, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	//testMesh.FindContactBorder(7, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	//testMesh.FindContactBorder(8, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
+	//testMesh.FindContactBorder(6, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	//testMesh.FindContactBorder(7, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	//testMesh.FindContactBorder(8, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
 
-	// Делим средние "Длинные" параллелепипеды на нужные кубики.
-	testMesh.FindContactBorder(3, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(4, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(5, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(3, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
-	testMesh.FindContactBorder(4, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
-	testMesh.FindContactBorder(5, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	int maxN = 0;
+	for (const auto& el : testMesh.faces)
+		if (el.nodes.size() > maxN)
+			maxN = el.nodes.size();
 
-	// Делим верхние "Длинные" параллелепипеды на нужные кубики.
-	testMesh.FindContactBorder(6, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(7, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(8, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(6, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
-	testMesh.FindContactBorder(7, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
-	testMesh.FindContactBorder(8, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	int maxF = 0;
+	for (const auto& el : testMesh.cells)
+		if (el.facesInd.size() > maxF)
+			maxF = el.facesInd.size();
+
+
+	for (size_t i = 0; i < testMesh.faces.size(); ++i)
+	{
+		const CIrregFace& f = testMesh.faces[i];
+		if (maxN == f.nodes.size())
+		{
+			std::cout << i << '\t' << maxN << '\n';
+		}
+	}
+	std::cout << '\n';
+	for (size_t i = 0; i < testMesh.cells.size(); ++i)
+	{
+		const CIrregCell& c = testMesh.cells[i];
+		if (maxF == c.facesInd.size())
+		{
+			std::cout << i << '\t' << maxF << '\n';
+		}
+	}
+
+	if (maxF > 6 || maxN > 4)
+		testMesh.sayInfo(std::cout);
+	return -3;
+
+	//testMesh.FindContactBorder(19, testMesh.nodes[0], testMesh.nodes[1], 1. / 54);
 
 	std::thread t(stupidCOUT);
 

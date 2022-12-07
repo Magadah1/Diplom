@@ -17,7 +17,7 @@ public:
 
 	std::pair<int, int> FindContactBorder(const int& cellNumber, CPoint startPoint, CPoint endPoint, const double& volume);
 
-	void spliteFaceByTriangles(const int& faceNumber);
+	void spliteFaceByTriangles(const int& faceNumber); // не затрагивает рёбра.
 
 	double getCellVolume(const CIrregCell& cell) const noexcept;
 
