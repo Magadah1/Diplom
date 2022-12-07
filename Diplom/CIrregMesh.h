@@ -21,6 +21,8 @@ public:
 
 	double getCellVolume(const CIrregCell& cell) const noexcept;
 
+	void setEdgePoint(const int& cellNumber, const int& point1ID, const int& point2ID, const int& newPointID) noexcept;
+
 	template<typename OStream>
 	void sayInfo(OStream& out);
 

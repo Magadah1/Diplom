@@ -243,7 +243,6 @@ int main(int argc, char** argv)
 	// Делим нижние "Длинные" параллелепипеды на нужные кубики.
 	//testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
 	//testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	//testMesh.sayInfo(std::cout);
 	//testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[2], 2. / 27); // тут появлялись дубликаты вершин
 	//testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
 	//testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
@@ -265,7 +264,7 @@ int main(int argc, char** argv)
 	//testMesh.FindContactBorder(7, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
 	//testMesh.FindContactBorder(8, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
 
-	int maxN = 0;
+	/*int maxN = 0;
 	for (const auto& el : testMesh.faces)
 		if (el.nodes.size() > maxN)
 			maxN = el.nodes.size();
@@ -292,11 +291,11 @@ int main(int argc, char** argv)
 		{
 			std::cout << i << '\t' << maxF << '\n';
 		}
-	}
+	}*/
 
-	if (maxF > 6 || maxN > 4)
+	/*if (maxF > 6 || maxN > 4)
 		testMesh.sayInfo(std::cout);
-	return -3;
+	return -3;*/
 
 	//testMesh.FindContactBorder(19, testMesh.nodes[0], testMesh.nodes[1], 1. / 54);
 
