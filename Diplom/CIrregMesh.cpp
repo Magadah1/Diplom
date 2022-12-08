@@ -11,8 +11,9 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
 
     constexpr double eps = 1e-8; // появился в C++11, если не работает - заменить на const double
     const CIrregCell& cell = cells[cellNumber]; // получаем клетку сетки
+    const double cellV = getCellVolume(cell);
 
-    if (getCellVolume(cell) < volume)
+    if (cellV < volume)
         throw std::exception("Искомый объём больше объёма самой ячейки!\n");
 
     CPoint mid = (CVector(startPoint) + endPoint) / 2.; // Середина отрезка [startPoint, endPoint]
@@ -29,6 +30,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
     std::vector<CIrregFace> resultFaces[2]; // Стороны новых клеток; СТРАННО 0 - клетка по другую сторону от нормали, 1 - другая.
     std::vector<CSurfaceNode> planePoints; // Новые вершины, которые могут получится при пересечении с плоскостью отсечения. С "отрицательным индексом" у ранее поделённых сторон.
     std::vector<int> rightUniquiePlanePoints; // Тут будут лишь уникальные точки плоскости, причём расположенные в правильном (друг за другом) порядке.
+    std::vector<std::pair<int, int>> existingPointsIDs; // Если для отрицательного индекса существует вершина в исходной сетке, то потом индекс будет ссылаться на неё. first - отрицательный индекс, second - исходный.
 
     using INT3 = std::tuple<int, int, int>;         // 3 int-а, идущие подряд
     using INT4 = std::tuple<int, int, int, int>;    // 4 int-а, идущие подрад
@@ -110,6 +112,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                             planePoints.push_back(Node1); --newNodeId;
                             newVolumeFace.nodes.push_back(newNodeId);
                             newOtherFace.nodes.push_back(newNodeId);
+                            existingPointsIDs.push_back(std::pair<int, int>(newNodeId, (int)Node1ID));
                         }
                         else
                         {
@@ -136,6 +139,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                                 planePoints.push_back(Node1); --newNodeId;
                                 newVolumeFace.nodes.push_back(newNodeId);
                                 newOtherFace.nodes.push_back(newNodeId);
+                                existingPointsIDs.push_back(std::pair<int, int>(newNodeId, (int)Node1ID));
                             }
                             else
                             {
@@ -381,10 +385,26 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
             {
                 planeFace.cell2 = cellNumber;
                 planeFace.cell1 = newCellId;
-            } // На этом этапе определена топология новой грани. Осталось обновить ВСЕ связи с изначальных и новых ячейках.
+            } // На этом этапе определена топология новой грани. Осталось обновить ВСЕ связи в изначальных и новых ячейках.
 
+            // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NEW !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             const int positiveNodeID = nodes.size();
-            nodes.insert(nodes.end(), planePoints.begin(), planePoints.end());
+            for (int i = 0; i < planePoints.size(); ++i)
+            {
+                const int negI = -i - 1;
+
+                bool was = false;
+
+                for (size_t j = 0; j < existingPointsIDs.size() && !was; ++j)
+                    if (negI == existingPointsIDs[j].first)
+                        was = true;
+
+                if (!was)
+                    nodes.push_back(planePoints[i]);
+            }
+
+            //const int positiveNodeID = nodes.size(); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            //nodes.insert(nodes.end(), planePoints.begin(), planePoints.end()); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             // Поэтапно заменим все отрицательные индексы у узлов на новые индексы из общего массива
 
@@ -393,9 +413,32 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                 int& id = planeFace.nodes[i]; // они все отрицательные <= -1 : (-1, -2, -3 ...)
                 
                 if (id >= 0)
-                    throw std::exception("Был положительный индекс. Глупость.\n");
+                    throw std::exception("Был положительный индекс. Глупость.\n"); // уже не глупость....
 
-                id = positiveNodeID - id - 1;
+                bool was = false;
+
+                for (size_t j = 0; j < existingPointsIDs.size() && !was; ++j)
+                    if (id == existingPointsIDs[j].first)
+                    {
+                        id = existingPointsIDs[j].second;
+                        was = true;
+                    }
+
+                if (!was)
+                {
+                    int countExistingPointsBelowThis{};
+
+                    for (size_t i = 0; i < existingPointsIDs.size(); ++i)
+                        if (existingPointsIDs[i].first > id)
+                            ++countExistingPointsBelowThis;
+                        else
+                            break;
+
+                    if (countExistingPointsBelowThis)
+                        id = positiveNodeID - 1 - (countExistingPointsBelowThis - id); //
+                    else
+                        id = positiveNodeID - 1 - id;
+                }
             }
             for (size_t i = 0; i < 2; ++i)
             {
@@ -408,15 +451,40 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                         int& id = nFace.nodes[k];
 
                         if (id < 0)
-                            id = positiveNodeID - id - 1;
+                        {
+                            bool was = false;
+
+                            for (size_t j = 0; j < existingPointsIDs.size() && !was; ++j)
+                                if (id == existingPointsIDs[j].first)
+                                {
+                                    id = existingPointsIDs[j].second;
+                                    was = true;
+                                }
+
+                            if (!was)
+                            {
+                                int countExistingPointsBelowThis{};
+
+                                for (size_t i = 0; i < existingPointsIDs.size(); ++i)
+                                    if (existingPointsIDs[i].first > id)
+                                        ++countExistingPointsBelowThis;
+                                    else
+                                        break;
+
+                                if (countExistingPointsBelowThis)
+                                    id = positiveNodeID - 1 - (countExistingPointsBelowThis - id); //
+                                else
+                                    id = positiveNodeID - 1 - id;
+                            }
+                        }
                     }
                 }
             } 
-            for (size_t i = 0; i < edgePoints.size(); ++i)
+            for (size_t i = 0; i < edgePoints.size(); ++i) // возможно тут
             {
                 int& newEdgePointId = std::get<3>(edgePoints[i]);
 
-                newEdgePointId = positiveNodeID - newEdgePointId - 1;
+                newEdgePointId = positiveNodeID - newEdgePointId - 1; // тут вроде бы всё норм...
             } // Все отрицательные индексы заменены на новые.
 
             faces.push_back(planeFace);
@@ -492,6 +560,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
             resultFaces[1].clear();
             planePoints.clear();
             rightUniquiePlanePoints.clear();
+            existingPointsIDs.clear();
             faceSplit.clear();
             edgePoints.clear();
             newNodeId = 0;
@@ -594,8 +663,7 @@ void CIrregMesh::setEdgePoint(const int& cellNumber, const int& point1ID, const 
                 std::vector<int>& fns = face.nodes;
                 size_t pos{};
                 for (; fns[pos] != point1ID && fns[pos] != point2ID; ++pos);
-                //face.nodes.insert(std::find(face.nodes.begin(), face.nodes.end(), Node1Id), newPointID); // вставляем новую точку на ребро.
-                fns.insert(fns.begin() + pos, newPointID);
+                fns.insert(fns.begin() + pos, newPointID); // вставляем новую точку на ребро.
 
                 int neighboringCellID = face.cell1 == cellNumber ? face.cell2 : face.cell1;
                 if (neighboringCellID != -1)
@@ -605,9 +673,7 @@ void CIrregMesh::setEdgePoint(const int& cellNumber, const int& point1ID, const 
         }
     }
     for (size_t i = 0; i < neighboringCells.size(); ++i)
-    {
         setEdgePoint(neighboringCells[i], point1ID, point2ID, newPointID); // для данного ребра всех соседних клеток вызовём данную функцию
-    }
 }
 
 CSurfaceNode CIrregMesh::getCellCenter(const CIrregCell& cell) const noexcept

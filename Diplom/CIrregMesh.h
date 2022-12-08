@@ -36,19 +36,20 @@ private:
 template<typename OStream>
 inline void CIrregMesh::sayInfo(OStream& out)
 {
+	out << "Totat cells = " << cells.size() << "; Total faces = " << faces.size() << "; Total nodes = " << nodes.size() << '\n';
 	for (size_t cId = 0; cId < cells.size(); ++cId)
 	{
 		const CIrregCell& cell = cells[cId];
 
 		out << "---------------------------------------------------\n";
-		out << "Cell #" << cId << " with volume = " << getCellVolume(cell) << '\n';
+		out << "Cell #" << cId << " with volume = " << getCellVolume(cell) << "; with " << cell.facesInd.size() << " faces\n";
 
 		for (size_t fId = 0; fId < cell.facesInd.size(); ++fId)
 		{
 			const int& faceID = cell.facesInd[fId];
 			const CIrregFace& face = faces[faceID];
 
-			out << "\tFace #" << faceID << " with cell1 = " << face.cell1 << " and cell2 = " << face.cell2 << '\n';
+			out << "\tFace #" << faceID << " with cell1 = " << face.cell1 << " and cell2 = " << face.cell2 << "; with " << face.nodes.size() << " nodes\n";
 
 			for (size_t nId = 0; nId < face.nodes.size(); ++nId)
 			{

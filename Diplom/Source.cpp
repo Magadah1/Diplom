@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <fstream>
 
 #include "CIrregMesh.h"
 #include "CMatrix.h"
@@ -225,29 +226,32 @@ int main(int argc, char** argv)
 
 	initialTestMesh = testMesh;
 	
+	std::ofstream OUT("out.txt");
 
 	// Делим на 3 "Высоких" параллелепипеда.
 	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[4], 1. / 3);
 	testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[4], 1. / 3);
 	
 	// Отсекаем 1/3 от "Высоких" параллелепипедов.
-	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[1], 1. / 9); // точка на ребро!
-	//testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
-	//testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
-	
-	// Делим оставшиеся 2/3 на пополам. По итогу получаем "Длинные" параллелепипеды.
+	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
+	testMesh.sayInfo(std::cout); 
+	testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[1], 1. / 9); // чекнуть отрицательные индексы..
+	//testMesh.sayInfo(std::cout);
+	//testMesh.FindContactBorder(2, testMesh.nodes[23], testMesh.nodes[14], 1. / 9); // дубликат точки.
+	//
+	//// Делим оставшиеся 2/3 на пополам. По итогу получаем "Длинные" параллелепипеды.
 	//testMesh.FindContactBorder(3, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
 	//testMesh.FindContactBorder(4, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
-	//testMesh.FindContactBorder(5, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
-	
-	// Делим нижние "Длинные" параллелепипеды на нужные кубики.
+	//testMesh.FindContactBorder(5, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);// тут 2 точки пересечения....
+	//
+	//// Делим нижние "Длинные" параллелепипеды на нужные кубики.
 	//testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
 	//testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
 	//testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[2], 2. / 27); // тут появлялись дубликаты вершин
 	//testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
 	//testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
 	//testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
-	//
+	////
 	//// Делим средние "Длинные" параллелепипеды на нужные кубики.
 	//testMesh.FindContactBorder(3, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
 	//testMesh.FindContactBorder(4, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
@@ -263,6 +267,11 @@ int main(int argc, char** argv)
 	//testMesh.FindContactBorder(6, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
 	//testMesh.FindContactBorder(7, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
 	//testMesh.FindContactBorder(8, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+
+	testMesh.sayInfo(OUT);
+
+	OUT.close();
+	system("start out.txt");
 
 	/*int maxN = 0;
 	for (const auto& el : testMesh.faces)
