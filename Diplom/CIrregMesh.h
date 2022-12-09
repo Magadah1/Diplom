@@ -37,12 +37,15 @@ template<typename OStream>
 inline void CIrregMesh::sayInfo(OStream& out)
 {
 	out << "Totat cells = " << cells.size() << "; Total faces = " << faces.size() << "; Total nodes = " << nodes.size() << '\n';
+	double totalVolume{};
 	for (size_t cId = 0; cId < cells.size(); ++cId)
 	{
 		const CIrregCell& cell = cells[cId];
 
 		out << "---------------------------------------------------\n";
-		out << "Cell #" << cId << " with volume = " << getCellVolume(cell) << "; with " << cell.facesInd.size() << " faces\n";
+		double cellVolume = getCellVolume(cell);
+		totalVolume += cellVolume;
+		out << "Cell #" << cId << " with volume = " << cellVolume << "; with " << cell.facesInd.size() << " faces\n";
 
 		for (size_t fId = 0; fId < cell.facesInd.size(); ++fId)
 		{
@@ -62,6 +65,8 @@ inline void CIrregMesh::sayInfo(OStream& out)
 			out << '\n';
 		}
 
-		out << "---------------------------------------------------\n\n\n\n";
+		out << "---------------------------------------------------\n";
 	}
+	out << "Total cell volume = " << totalVolume << "\n\n\n";
+
 }

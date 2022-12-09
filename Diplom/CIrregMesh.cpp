@@ -417,28 +417,19 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
 
                 bool was = false;
 
+                int countExistingPointsBelowThis{};
+
                 for (size_t j = 0; j < existingPointsIDs.size() && !was; ++j)
                     if (id == existingPointsIDs[j].first)
                     {
                         id = existingPointsIDs[j].second;
                         was = true;
                     }
+                    else if (existingPointsIDs[j].first > id)
+                        ++countExistingPointsBelowThis;
 
                 if (!was)
-                {
-                    int countExistingPointsBelowThis{};
-
-                    for (size_t i = 0; i < existingPointsIDs.size(); ++i)
-                        if (existingPointsIDs[i].first > id)
-                            ++countExistingPointsBelowThis;
-                        else
-                            break;
-
-                    if (countExistingPointsBelowThis)
-                        id = positiveNodeID - 1 - (countExistingPointsBelowThis - id); //
-                    else
-                        id = positiveNodeID - 1 - id;
-                }
+                    id = positiveNodeID - 1 - (countExistingPointsBelowThis + id); //
             }
             for (size_t i = 0; i < 2; ++i)
             {
@@ -454,28 +445,19 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                         {
                             bool was = false;
 
+                            int countExistingPointsBelowThis{};
+
                             for (size_t j = 0; j < existingPointsIDs.size() && !was; ++j)
                                 if (id == existingPointsIDs[j].first)
                                 {
                                     id = existingPointsIDs[j].second;
                                     was = true;
                                 }
+                                else if (existingPointsIDs[j].first > id)
+                                    ++countExistingPointsBelowThis;
 
                             if (!was)
-                            {
-                                int countExistingPointsBelowThis{};
-
-                                for (size_t i = 0; i < existingPointsIDs.size(); ++i)
-                                    if (existingPointsIDs[i].first > id)
-                                        ++countExistingPointsBelowThis;
-                                    else
-                                        break;
-
-                                if (countExistingPointsBelowThis)
-                                    id = positiveNodeID - 1 - (countExistingPointsBelowThis - id); //
-                                else
-                                    id = positiveNodeID - 1 - id;
-                            }
+                                id = positiveNodeID - 1 - (countExistingPointsBelowThis + id); //
                         }
                     }
                 }
@@ -484,7 +466,15 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
             {
                 int& newEdgePointId = std::get<3>(edgePoints[i]);
 
-                newEdgePointId = positiveNodeID - newEdgePointId - 1; // тут вроде бы всЄ норм...
+                int countExistingPointsBelowThis{};
+
+                for (size_t j = 0; j < existingPointsIDs.size(); ++j)
+                    if (existingPointsIDs[j].first > newEdgePointId)
+                        ++countExistingPointsBelowThis;
+                    else
+                        break;
+
+                newEdgePointId = positiveNodeID - 1 - (countExistingPointsBelowThis + newEdgePointId); // не норм...
             } // ¬се отрицательные индексы заменены на новые.
 
             faces.push_back(planeFace);

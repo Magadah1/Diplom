@@ -234,13 +234,11 @@ int main(int argc, char** argv)
 	
 	// Отсекаем 1/3 от "Высоких" параллелепипедов.
 	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
-	testMesh.sayInfo(std::cout); 
-	testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[1], 1. / 9); // чекнуть отрицательные индексы..
-	//testMesh.sayInfo(std::cout);
-	//testMesh.FindContactBorder(2, testMesh.nodes[23], testMesh.nodes[14], 1. / 9); // дубликат точки.
-	//
-	//// Делим оставшиеся 2/3 на пополам. По итогу получаем "Длинные" параллелепипеды.
-	//testMesh.FindContactBorder(3, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
+	testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[1], 1. / 9); 
+	testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
+	
+	// Делим оставшиеся 2/3 на пополам. По итогу получаем "Длинные" параллелепипеды.
+	testMesh.FindContactBorder(3, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
 	//testMesh.FindContactBorder(4, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
 	//testMesh.FindContactBorder(5, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);// тут 2 точки пересечения....
 	//
