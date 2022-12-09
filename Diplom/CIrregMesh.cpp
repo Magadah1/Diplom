@@ -429,7 +429,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                         ++countExistingPointsBelowThis;
 
                 if (!was)
-                    id = positiveNodeID - 1 - (countExistingPointsBelowThis + id); //
+                    id = positiveNodeID - 1 - (countExistingPointsBelowThis + id); 
             }
             for (size_t i = 0; i < 2; ++i)
             {
@@ -457,12 +457,12 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                                     ++countExistingPointsBelowThis;
 
                             if (!was)
-                                id = positiveNodeID - 1 - (countExistingPointsBelowThis + id); //
+                                id = positiveNodeID - 1 - (countExistingPointsBelowThis + id); 
                         }
                     }
                 }
             } 
-            for (size_t i = 0; i < edgePoints.size(); ++i) // возможно тут
+            for (size_t i = 0; i < edgePoints.size(); ++i) 
             {
                 int& newEdgePointId = std::get<3>(edgePoints[i]);
 
@@ -474,7 +474,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                     else
                         break;
 
-                newEdgePointId = positiveNodeID - 1 - (countExistingPointsBelowThis + newEdgePointId); // не норм...
+                newEdgePointId = positiveNodeID - 1 - (countExistingPointsBelowThis + newEdgePointId);
             } // Все отрицательные индексы заменены на новые.
 
             faces.push_back(planeFace);
@@ -653,6 +653,10 @@ void CIrregMesh::setEdgePoint(const int& cellNumber, const int& point1ID, const 
                 std::vector<int>& fns = face.nodes;
                 size_t pos{};
                 for (; fns[pos] != point1ID && fns[pos] != point2ID; ++pos);
+
+                if (fns[pos + 1] == point1ID || fns[pos + 1] == point2ID) // если 2 подряд
+                    ++pos;
+
                 fns.insert(fns.begin() + pos, newPointID); // вставляем новую точку на ребро.
 
                 int neighboringCellID = face.cell1 == cellNumber ? face.cell2 : face.cell1;

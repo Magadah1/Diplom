@@ -39,7 +39,7 @@ public:
 	{
 		const double value = getValue(p);
 
-		return abs(value) > 1e-5 ? (value > 0 ? 1 : (value < 0 ? -1 : 0)): 0;
+		return abs(value) > 1e-4 ? (value > 0 ? 1 : (value < 0 ? -1 : 0)): 0;
 	}
 	inline double getNormedValue(const CPoint* p) const
 	{
