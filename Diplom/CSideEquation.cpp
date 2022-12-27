@@ -1,5 +1,7 @@
 #include "CSideEquation.h"
 
+extern const double PlaneEps;
+
 CSideEquation::CSideEquation() noexcept
 	: a(0.), b(0.), c(0.), d(0.)
 {
@@ -93,6 +95,13 @@ void CSideEquation::setNormal(const CVector& n, const CPoint& p) noexcept
 void CSideEquation::setNormal(const CVector* n, const CPoint* p)
 {
 	setNormal(*n, *p);
+}
+
+int CSideEquation::getNormedValue(const CPoint& p) const noexcept
+{
+	const double value = getValue(p);
+
+	return abs(value) > PlaneEps ? (value > 0 ? 1 : (value < 0 ? -1 : 0)) : 0; //-13 максимум
 }
 
 bool CSideEquation::getIntersectionPoint(const CPoint& p1, const CPoint& p2, CPoint* const result) const noexcept

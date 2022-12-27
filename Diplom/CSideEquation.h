@@ -35,12 +35,7 @@ public:
 	{
 		return getValue(*p);
 	}
-	inline int getNormedValue(const CPoint& p) const noexcept
-	{
-		const double value = getValue(p);
-
-		return abs(value) > 1e-4 ? (value > 0 ? 1 : (value < 0 ? -1 : 0)): 0;
-	}
+	int getNormedValue(const CPoint& p) const noexcept;
 	inline double getNormedValue(const CPoint* p) const
 	{
 		return getNormedValue(*p);

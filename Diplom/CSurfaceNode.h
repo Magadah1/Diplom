@@ -19,10 +19,8 @@ public:
     {
         return *this;
     }
-    inline bool operator==(const CSurfaceNode& other) const noexcept
-    {
-        return sqrt(pow(other.x - this->x, 2) + pow(other.y - this->y, 2) + pow(other.z - this->z, 2)) < 1e-8; // 1e-8
-    }
+    bool operator==(const CSurfaceNode& other) const noexcept;
+
     inline bool operator!=(const CSurfaceNode& other) const noexcept
     {
         return !(*this == other);

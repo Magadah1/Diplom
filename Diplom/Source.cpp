@@ -14,6 +14,10 @@ static CIrregMesh initialTestMesh;
 static int wtd = -1; // -1 - ничего не рисуем. size() - рисуем все. Другое число - номер клетки, который рисуем.
 static int gw = 1300, gh = 1300;
 
+extern const double CalculationEps	= 1e-12; //16 //12
+extern const double EqualPointsEps	= 1e-11; //16 //11
+extern const double PlaneEps		= 1e-9; //13  //9
+
 void glVertex3f(const CPoint& p)
 {
 	glVertex3f(p.X(), p.Y(), p.Z());
@@ -169,14 +173,24 @@ template <typename OStream>
 void iteract(int cellNumber, CPoint start, CPoint end, double volume, OStream& OUT, bool log = false)
 {
 	if (log)
-		OUT << "\n----Volume = " << volume;
+		OUT << "----Volume = " << volume;
 	std::chrono::steady_clock::time_point startT = std::chrono::steady_clock::now();
-	std::pair<int, int> res = testMesh.FindContactBorder(cellNumber, start, end, volume);
+	std::pair<int, int> res;
+	try
+	{
+		res = testMesh.FindContactBorder(cellNumber, start, end, volume);
+	}
+	catch (const std::exception& e)
+	{
+		OUT << "\nError = " << e.what();
+		OUT << "Volume = " << volume << '\n';
+		throw e;
+	}
 	std::chrono::steady_clock::time_point endT = std::chrono::steady_clock::now();
 	std::chrono::microseconds timeDiff = std::chrono::duration_cast<std::chrono::microseconds>(endT - startT);
 
 	if (log)
-		OUT << "\tIterations = " << res.second << " with in " << timeDiff.count() << " microseconds with volume = " << testMesh.getCellVolume(testMesh.cells[cellNumber]);
+		OUT << "\tIterations = " << res.second << " with in " << timeDiff.count() << " microseconds with volume = " << testMesh.getCellVolume(testMesh.cells[cellNumber]) << '\n';
 }
 
 void stupidCOUT()
@@ -188,6 +202,7 @@ int main(int argc, char** argv)
 {
 	setlocale(0, "");
 	CMatrix4x4d m;
+	m.setIdentityMatrix();
 	
 	testMesh.nodes.push_back({ 0,0,0 }); //0
 	testMesh.nodes.push_back({ 0,0,1 }); //1
@@ -225,51 +240,120 @@ int main(int argc, char** argv)
 	testMesh.cells.push_back(testCell);
 
 	initialTestMesh = testMesh;
-	
-	std::ofstream OUT("out.txt");
+	const double CellV = testMesh.getCellVolume(testMesh.cells[0]);
 
-	// Делим на 3 "Высоких" параллелепипеда.
-	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[4], 1. / 3);
-	testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[4], 1. / 3);
-	
-	// Отсекаем 1/3 от "Высоких" параллелепипедов.
-	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
-	testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[1], 1. / 9); 
-	testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
-	
-	// Делим оставшиеся 2/3 на пополам. По итогу получаем "Длинные" параллелепипеды.
-	testMesh.FindContactBorder(3, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
-	testMesh.FindContactBorder(4, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
-	testMesh.FindContactBorder(5, testMesh.nodes[0], testMesh.nodes[1], 1. / 9);
-	
-	// Делим нижние "Длинные" параллелепипеды на нужные кубики.
-	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(0, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
-	testMesh.FindContactBorder(1, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
-	testMesh.FindContactBorder(2, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
-	
-	// Делим средние "Длинные" параллелепипеды на нужные кубики.
-	testMesh.FindContactBorder(3, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(4, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(5, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(3, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
-	testMesh.FindContactBorder(4, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
-	testMesh.FindContactBorder(5, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
-	
-	// Делим верхние "Длинные" параллелепипеды на нужные кубики.
-	testMesh.FindContactBorder(6, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(7, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(8, testMesh.nodes[0], testMesh.nodes[2], 2. / 27);
-	testMesh.FindContactBorder(6, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
-	testMesh.FindContactBorder(7, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
-	testMesh.FindContactBorder(8, testMesh.nodes[0], testMesh.nodes[2], 1. / 27);
+	constexpr int total = 1e3;
+	int g{};
+	int rndG{};
+	int rndV{};
+	srand(100);
+	for (size_t i = 0; i < total; ++i)
+	{
+		try
+		{
+			/*m.createTransferMatrix(
+				{
+					-5 + double(rand()) / RAND_MAX * 10,
+					-5 + double(rand()) / RAND_MAX * 10,
+					-5 + double(rand()) / RAND_MAX * 10
+				}
+			);*/
 
-	testMesh.sayInfo(OUT);
+			/*m.createRotationMatrix(
+				{
+					-1 + double(rand()) / RAND_MAX * 2,
+					-1 + double(rand()) / RAND_MAX * 2,
+					-1 + double(rand()) / RAND_MAX * 2
+				},
+				rand() % 360,
+				false
+			);*/
 
-	OUT.close();
-	system("start out.txt");
+			m.createRTMatrix(
+				{
+					-5 + double(rand()) / RAND_MAX * 10,
+					-5 + double(rand()) / RAND_MAX * 10,
+					-5 + double(rand()) / RAND_MAX * 10
+				},
+				{
+					-1 + double(rand()) / RAND_MAX * 2,
+					-1 + double(rand()) / RAND_MAX * 2,
+					-1 + double(rand()) / RAND_MAX * 2
+				},
+				rand() % 360,
+				false
+			);
+
+			for (size_t j = 0; j < testMesh.nodes.size(); ++j)
+				testMesh.nodes[j] = m * initialTestMesh.nodes[j];
+			
+			rndG = rand() % testMesh.faces.size();
+			testMesh.spliteFaceByTriangles(rndG); // 0
+			//testMesh.spliteFaceByTriangles(rand() % testMesh.faces.size());
+			rndV = rand() % 7 + 1;
+			iteract(0, testMesh.nodes[0], testMesh.nodes[rndV], CellV * double(rand()) / RAND_MAX, std::cout, false);
+
+			testMesh = initialTestMesh;
+			++g;
+		}
+		catch (const std::exception&)
+		{
+			std::cout << "Face =" << rndG << "\t Node =" << rndV << "\t I =" << i << '\n';
+		}
+		testMesh = initialTestMesh;
+	}
+	std::cout << "\n---Good=" << g << " of " << total << "---\n";
+	testMesh.spliteFaceByTriangles(5);
+	//return -223;
+	//std::ofstream OUT("out.txt");
+
+	//// Делим на 3 "Высоких" параллелепипеда.
+	//iteract(0, testMesh.nodes[0], testMesh.nodes[4], 1. / 3, std::cout, true);
+	//iteract(1, testMesh.nodes[0], testMesh.nodes[4], 1. / 3, std::cout, true);
+	//
+	//// Отсекаем 1/3 от "Высоких" параллелепипедов.
+	//iteract(0, testMesh.nodes[0], testMesh.nodes[1], 1. / 9, std::cout, true);
+	//iteract(1, testMesh.nodes[0], testMesh.nodes[1], 1. / 9, std::cout, true);
+	//iteract(2, testMesh.nodes[0], testMesh.nodes[1], 1. / 9, std::cout, true);
+	//
+	//// Делим оставшиеся 2/3 на пополам. По итогу получаем "Длинные" параллелепипеды.
+	//iteract(3, testMesh.nodes[0], testMesh.nodes[1], 1. / 9, std::cout, true);
+	//iteract(4, testMesh.nodes[0], testMesh.nodes[1], 1. / 9, std::cout, true);
+	//iteract(5, testMesh.nodes[0], testMesh.nodes[1], 1. / 9, std::cout, true);
+	//
+	//// Делим нижние "Длинные" параллелепипеды на нужные кубики.
+	//iteract(0, testMesh.nodes[0], testMesh.nodes[2], 2. / 27, std::cout, true);
+	//iteract(1, testMesh.nodes[0], testMesh.nodes[2], 2. / 27, std::cout, true);
+	//iteract(2, testMesh.nodes[0], testMesh.nodes[2], 2. / 27, std::cout, true);
+	//iteract(0, testMesh.nodes[0], testMesh.nodes[2], 1. / 27, std::cout, true);
+	//iteract(1, testMesh.nodes[0], testMesh.nodes[2], 1. / 27, std::cout, true);
+	//iteract(2, testMesh.nodes[0], testMesh.nodes[2], 1. / 27, std::cout, true);
+	//
+	//// Делим средние "Длинные" параллелепипеды на нужные кубики.
+	//iteract(3, testMesh.nodes[0], testMesh.nodes[2], 2. / 27, std::cout, true);
+	//iteract(4, testMesh.nodes[0], testMesh.nodes[2], 2. / 27, std::cout, true);
+	//iteract(5, testMesh.nodes[0], testMesh.nodes[2], 2. / 27, std::cout, true);
+	//iteract(3, testMesh.nodes[0], testMesh.nodes[2], 1. / 27, std::cout, true);
+	//iteract(4, testMesh.nodes[0], testMesh.nodes[2], 1. / 27, std::cout, true);
+	//iteract(5, testMesh.nodes[0], testMesh.nodes[2], 1. / 27, std::cout, true);
+	//
+	//// Делим верхние "Длинные" параллелепипеды на нужные кубики.
+	//iteract(6, testMesh.nodes[0], testMesh.nodes[2], 2. / 27, std::cout, true);
+	//iteract(7, testMesh.nodes[0], testMesh.nodes[2], 2. / 27, std::cout, true);
+	//iteract(8, testMesh.nodes[0], testMesh.nodes[2], 2. / 27, std::cout, true);
+	//iteract(6, testMesh.nodes[0], testMesh.nodes[2], 1. / 27, std::cout, true);
+	//iteract(7, testMesh.nodes[0], testMesh.nodes[2], 1. / 27, std::cout, true);
+	//iteract(8, testMesh.nodes[0], testMesh.nodes[2], 1. / 27, std::cout, true);
+
+	//std::cout << "Total cells = " << testMesh.cells.size() << "\tTotal faces = " << testMesh.faces.size() << "\tTotal nodes = " << testMesh.nodes.size();
+	////return -1;
+
+	//std::thread t(stupidCOUT);
+
+	//testMesh.sayInfo(OUT);
+
+	//OUT.close();
+	//system("start out.txt");
 
 	/*int maxN = 0;
 	for (const auto& el : testMesh.faces)
@@ -306,67 +390,70 @@ int main(int argc, char** argv)
 
 	//testMesh.FindContactBorder(19, testMesh.nodes[0], testMesh.nodes[1], 1. / 54);
 
-	std::thread t(stupidCOUT);
+	//std::thread t(stupidCOUT);
 
 	//testMesh.sayInfo(std::cout);
 
+	// НЕ РАБОТАЕТ! НУЖНО СИЛЬНО ПОНИЖАТЬ ТОЧНОСТЬ
 	/*const double cellVolume = initialTestMesh.getCellVolume(initialTestMesh.cells[0]);
 
 	testMesh.sayInfo(std::cout);
 
 	srand(1234512);
 
-	for (size_t i = 0; i < 250; ++i)
+	for (size_t i = 0; i < 2; ++i)
 		testMesh.spliteFaceByTriangles(rand() % testMesh.faces.size());
 
-	iteract(0, testMesh.nodes[0], testMesh.nodes[7], 0.5231, std::cout, true);
+	iteract(0, testMesh.nodes[0], testMesh.nodes[7], 0.52, std::cout, true);
 
 	std::thread t(stupidCOUT);*/
 	//testMesh.sayInfo(std::cout);
 
-	/*constexpr size_t total = 1e3;
-	size_t good{};
-	for (size_t i = 0; i < total; ++i)
-	{
-		int randomSplitsCount = rand() % 100;
-		for (int j = 0; j < randomSplitsCount; ++j)
-			testMesh.spliteFaceByTriangles(rand() % testMesh.faces.size());
+	// НЕ РАБОТАЕТ! ОПЯТЬ НУЖНО ИГРАТЬ С ТОЧНОСТЬЮ...
+	//constexpr size_t total = 1e1;
+	//const double cellVolume = initialTestMesh.getCellVolume(initialTestMesh.cells[0]);
+	//size_t good{};
+	//for (size_t i = 0; i < total; ++i)
+	//{
+	//	/*int randomSplitsCount = rand() % 100;
+	//	for (int j = 0; j < randomSplitsCount; ++j)
+	//		testMesh.spliteFaceByTriangles(rand() % testMesh.faces.size());*/
 
-		m.createRTMatrix(
-			{
-			-123.12 + double(rand()) / RAND_MAX * 246.24,
-			-123.12 + double(rand()) / RAND_MAX * 246.24,
-			-123.12 + double(rand()) / RAND_MAX * 246.24
-			},
-			{
-			-6 + double(rand()) / RAND_MAX * 12,
-			-6 + double(rand()) / RAND_MAX * 12,
-			-6 + double(rand()) / RAND_MAX * 12
-			},
-			rand() % 360,
-			false
-		);
+	//	m.createRTMatrix(
+	//		{
+	//		-123.12 + double(rand()) / RAND_MAX * 246.24,
+	//		-123.12 + double(rand()) / RAND_MAX * 246.24,
+	//		-123.12 + double(rand()) / RAND_MAX * 246.24
+	//		},
+	//		{
+	//		-6 + double(rand()) / RAND_MAX * 12,
+	//		-6 + double(rand()) / RAND_MAX * 12,
+	//		-6 + double(rand()) / RAND_MAX * 12
+	//		},
+	//		rand() % 360,
+	//		false
+	//	);
 
-		double randVolume = double(rand()) / RAND_MAX * cellVolume;
-		try
-		{
-			for (size_t i = 0; i < testMesh.nodes.size(); ++i)
-				testMesh.nodes[i] = m * testMesh.nodes[i];
-			iteract(0, testMesh.nodes[0], testMesh.nodes[7], randVolume, std::cout);
-			++good;
-		}
-		catch (const std::exception& e)
-		{
-			std::cout << e.what();
-			std::cout << "RandV = " << randVolume << "\trsc = " << randomSplitsCount << "\tcellVolume = " << testMesh.getCellVolume(testMesh.cells[0]) << '\n';
-		}
+	//	double randVolume = double(rand()) / RAND_MAX * cellVolume;
+	//	try
+	//	{
+	//		for (size_t i = 0; i < testMesh.nodes.size(); ++i)
+	//			testMesh.nodes[i] = m * testMesh.nodes[i];
+	//		iteract(0, testMesh.nodes[0], testMesh.nodes[7], randVolume, std::cout);
+	//		++good;
+	//	}
+	//	catch (const std::exception& e)
+	//	{
+	//		std::cout << e.what();
+	//		std::cout << "RandV = " << randVolume << "\trsc = " << /*randomSplitsCount*/ 0 << "\tcellVolume = " << testMesh.getCellVolume(testMesh.cells[0]) << '\n';
+	//	}
 
 
-		testMesh = initialTestMesh;
-	}
-	std::cout << "Good = " << good << "\terrors = " << total - good << '\n';
-	testMesh.sayInfo(std::cout);
-	return -2;*/
+	//	testMesh = initialTestMesh;
+	//}
+	//std::cout << "Good = " << good << "\terrors = " << total - good << '\n';
+	//std::thread t(stupidCOUT); 
+	//return -2;
 
 
 	// CIrregMesh testMesh;
@@ -543,5 +630,5 @@ int main(int argc, char** argv)
 	glutSpecialFunc(processSpecialKeys);
 	glutKeyboardFunc(processNormalKeys);
 	glutMainLoop();
-	t.join();
+	//t.join();
 }

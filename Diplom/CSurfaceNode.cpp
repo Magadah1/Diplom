@@ -1,5 +1,7 @@
 #include "CSurfaceNode.h"
 
+extern const double EqualPointsEps;
+
 CSurfaceNode::CSurfaceNode() noexcept
 	: CPoint()
 {
@@ -28,4 +30,9 @@ CSurfaceNode::CSurfaceNode(const CSurfaceNode& other) noexcept
 CSurfaceNode::CSurfaceNode(const CSurfaceNode* other)
 	:CSurfaceNode(*other)
 {
+}
+
+bool CSurfaceNode::operator==(const CSurfaceNode& other) const noexcept
+{
+	return sqrt(pow(other.x - this->x, 2) + pow(other.y - this->y, 2) + pow(other.z - this->z, 2)) < EqualPointsEps; //-16 максимум
 }

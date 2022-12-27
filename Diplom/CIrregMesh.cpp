@@ -1,4 +1,5 @@
 #include "CIrregMesh.h"
+extern const double CalculationEps;
 
 CIrregMesh::CIrregMesh() noexcept
 {
@@ -9,7 +10,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
     if (cellNumber < 0 || cellNumber >= cells.size())
         throw std::exception("Ячейки с таким номером не существует!\n");
 
-    constexpr double eps = 1e-8; // появился в C++11, если не работает - заменить на const double
+    //constexpr double eps = 1e-16; //-16 максимум
     const CIrregCell& cell = cells[cellNumber]; // получаем клетку сетки
     const double cellV = getCellVolume(cell);
 
@@ -232,6 +233,10 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
             {
                 bool was = false;
                 const CIrregFace& face = resultFaces[0][startFaceId];
+                
+                if (std::count_if(face.nodes.begin(), face.nodes.end(), std::bind(std::less<int>(), std::placeholders::_1, 0)) < 2)
+                    continue; // если на грани меньше 2 отрицательных точек, то скипнем эту грань
+                
                 for (size_t nodeId = 0; nodeId < face.nodes.size(); ++nodeId)
                     if (face.nodes[nodeId] == initialeNodeID)
                     {
@@ -369,7 +374,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
         }
 
         // БЛОК 3. СРАВНЕНИЕ ОБЪЕМОВ.
-        if (abs(tempVolume - volume) < eps) // проверяем, сколько объёма нашли
+        if (abs(tempVolume - volume) < CalculationEps) // проверяем, сколько объёма нашли
         {
             // БЛОК 3.1. ИЗМЕНЕНИЕ ДАННЫХ В ИСХОДНОЙ СЕТКЕ.
             const CVector N0 = planePoints[-planeFace.nodes[0] - 1];
@@ -563,10 +568,10 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
             mid = (CVector(startPoint) + endPoint) / 2.;
 
             ++iterCRITICAL;
-            if (iterCRITICAL >= 1'000'000)
-                throw std::exception("Было более миллиона итераций! Возможно границы постоения плоскости заданы не верно или между ними нет возможности найти точку, дающую нужный объём отсечения!\n");
+            if (iterCRITICAL >= 100'000)
+                throw std::exception("Было более ста тысяч итераций! Возможно границы постоения плоскости заданы не верно или между ними нет возможности найти точку, дающую нужный объём отсечения!\n");
 
-            if ((CVector(startPoint) - endPoint).Length() < eps)
+            if ((CVector(startPoint) - endPoint).Length() < CalculationEps)
                 throw std::exception("Границы построения плоскости слишком сблизились!\n");
         }
     }
