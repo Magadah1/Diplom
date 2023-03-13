@@ -136,6 +136,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CException.cpp" />
     <ClCompile Include="CIrregCell.cpp" />
     <ClCompile Include="CIrregFace.cpp" />
     <ClCompile Include="CIrregMesh.cpp" />
@@ -148,6 +149,7 @@
     <ClCompile Include="Tetrahedron.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CException.h" />
     <ClInclude Include="CIrregCell.h" />
     <ClInclude Include="CIrregFace.h" />
     <ClInclude Include="CIrregMesh.h" />

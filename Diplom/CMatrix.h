@@ -1,7 +1,6 @@
 #pragma once
 #include <array>
-#include "CVector.h"
-//#include <type_traits>
+#include "CIrregMesh.h"
 
 template<typename elementType, size_t m, size_t n>
 class CMatrix
@@ -15,8 +14,10 @@ public:
 	elementType& operator()(const size_t& mPos, const size_t& nPos);
 	const elementType& operator()(const size_t& mPos, const size_t& nPos) const;
 
+	void rotateMesh(CIrregMesh& mesh) const noexcept;
+
 protected:
-	std::array<std::array<elementType, n>, m> mat;
+	std::array<std::array<elementType, n>, m> mat{};
 };
 
 template<typename elementType, size_t m, size_t n>
@@ -46,6 +47,22 @@ template<typename elementType, size_t m, size_t n>
 inline const elementType& CMatrix<elementType, m, n>::operator()(const size_t& mPos, const size_t& nPos) const
 {
 	return mat[mPos][nPos];
+}
+
+template<typename elementType, size_t m, size_t n>
+inline void CMatrix<elementType, m, n>::rotateMesh(CIrregMesh& mesh) const noexcept
+{
+	for (size_t pInd = 0; pInd < mesh.nodes.size(); ++pInd)
+	{
+		CPoint& p = mesh.nodes[pInd];
+		CPoint res;
+
+		res.X() = mat[0][0] * p.X() + mat[0][1] * p.Y() + mat[0][2] * p.Z() + mat[0][3];
+		res.Y() = mat[1][0] * p.X() + mat[1][1] * p.Y() + mat[1][2] * p.Z() + mat[1][3];
+		res.Z() = mat[2][0] * p.X() + mat[2][1] * p.Y() + mat[2][2] * p.Z() + mat[2][3];
+
+		p = res;
+	}
 }
 
 class CMatrix4x4d

@@ -258,6 +258,8 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
             int nextNodeId{}; // Будем искать к ней соседей из другой грани до тех пор, пока не достигнем изначальной вершины
             do
             {
+                if (!startNodeID)
+                    throw std::exception("Неправильно восстановлена последовательность точек пересечения!\n");
                 rightUniquiePlanePoints.push_back(startNodeID); // записываем вершину, которая как бы является началом ребра поиска соседней
                 
                 if (rightUniquiePlanePoints.size() > planePoints.size())
@@ -550,6 +552,13 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
         }
         else
         {
+            ++iterCRITICAL;
+            if (iterCRITICAL >= 100'000)
+                throw std::exception("Было более ста тысяч итераций! Возможно границы постоения плоскости заданы не верно или между ними нет возможности найти точку, дающую нужный объём отсечения!\n");
+
+            if ((CVector(startPoint) - endPoint).Length() < CalculationEps)
+                throw CException("Границы построения плоскости слишком сблизились!", { {"Искомый", volume}, {"Найденный", tempVolume}, {"Разница", abs(volume - tempVolume)} });
+
             // БЛОК 3.2. ПОВТОРНЫЙ РАСЧЁТ УРАВНЕНИЯ ПЛОСКОСТИ И Т.П.
             resultFaces[0].clear();
             resultFaces[1].clear();
@@ -566,13 +575,6 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                 startPoint = mid;
 
             mid = (CVector(startPoint) + endPoint) / 2.;
-
-            ++iterCRITICAL;
-            if (iterCRITICAL >= 100'000)
-                throw std::exception("Было более ста тысяч итераций! Возможно границы постоения плоскости заданы не верно или между ними нет возможности найти точку, дающую нужный объём отсечения!\n");
-
-            if ((CVector(startPoint) - endPoint).Length() < CalculationEps)
-                throw std::exception("Границы построения плоскости слишком сблизились!\n");
         }
     }
 
@@ -653,7 +655,7 @@ void CIrregMesh::setEdgePoint(const int& cellNumber, const int& point1ID, const 
             const int Node2Id = face.nodes[(j + 1ull) % face.nodes.size()];
             std::pair<int, int> egde = { Node1Id < Node2Id ? Node1Id : Node2Id, Node1Id < Node2Id ? Node2Id : Node1Id };
 
-            if (sortedPointsIDs == egde)
+            if (sortedPointsIDs == egde) // зачем считаю второй раз, если есть J?
             {
                 std::vector<int>& fns = face.nodes;
                 size_t pos{};

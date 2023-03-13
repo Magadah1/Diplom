@@ -6,7 +6,7 @@
 #include "CSurfaceNode.h"
 #include "CSideEquation.h"
 #include "Tetrahedron.h"
-
+#include "CException.h"
 class CIrregMesh
 {
 public:
