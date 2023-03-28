@@ -33,6 +33,30 @@ public:
 	{
 		return z;
 	}
+	inline CPoint& operator+=(const CPoint& other) noexcept
+	{
+		x += other.x;
+		y += other.y;
+		z += other.z;
+
+		return *this;
+	}
+	inline CPoint& operator-=(const CPoint& other) noexcept
+	{
+		x -= other.x;
+		y -= other.y;
+		z -= other.z;
+
+		return *this;
+	}
+	inline CPoint operator+(const CPoint& other) noexcept
+	{
+		return CPoint(x + other.x, y + other.y, z + other.z);
+	}
+	inline CPoint operator-(const CPoint& other) noexcept
+	{
+		return CPoint(x - other.x, y - other.y, z - other.z);
+	}
 protected:
 	double x, y, z;
 };

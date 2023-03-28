@@ -3,6 +3,11 @@ extern const double CalculationEps;
 
 CIrregMesh::CIrregMesh() noexcept
 {
+
+#ifdef NEWTON
+    isNew = false;
+#endif // NEWTON
+
 }
 
 std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint startPoint, CPoint endPoint, const double& volume)
@@ -16,8 +21,22 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
 
     if (cellV < volume)
         throw std::exception("Искомый объём больше объёма самой ячейки!\n");
+    else if (volume < CalculationEps)
+        throw std::exception("Смысл отрезать 0ой объём?\n");
 
-    CPoint mid = (CVector(startPoint) + endPoint) / 2.; // Середина отрезка [startPoint, endPoint]
+    
+
+#ifndef NEWTON
+    // Середина отрезка [startPoint, endPoint]
+    CPoint mid = (CVector(startPoint) + endPoint) / 2.; 
+#else
+    CPoint mid, oldMid;
+    if (!isNew)
+        mid = (CVector(startPoint) + endPoint) / 2.;
+    else
+        oldMid = mid = CVector(startPoint) + CVector(startPoint).createVector(endPoint).Orth() * CVector(startPoint).createVector(endPoint).Length() * volume / cellV;
+#endif // !NEWTON
+
     
     CSideEquation plane(CVector(startPoint).createVector(endPoint)); // Строим плоскость, направленную от startPoint к endPoint
 
@@ -553,11 +572,25 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
         else
         {
             ++iterCRITICAL;
-            if (iterCRITICAL >= 100'000)
-                throw std::exception("Было более ста тысяч итераций! Возможно границы постоения плоскости заданы не верно или между ними нет возможности найти точку, дающую нужный объём отсечения!\n");
-
-            if ((CVector(startPoint) - endPoint).Length() < CalculationEps)
+            if (iterCRITICAL >= 10000)
+                throw CException("Было более десяти тысяч итераций! Проверьте границы поиска!", { {"Искомый", volume}, {"Найденный", tempVolume}, {"Разница", abs(volume - tempVolume)} });
+#ifndef NEWTON
+            if ((CVector(startPoint) - endPoint).Length() < CalculationEps / 10)
                 throw CException("Границы построения плоскости слишком сблизились!", { {"Искомый", volume}, {"Найденный", tempVolume}, {"Разница", abs(volume - tempVolume)} });
+#else
+            if (!isNew)
+            {
+                if ((CVector(startPoint) - endPoint).Length() < CalculationEps / 10)
+                    throw CException("Границы построения плоскости слишком сблизились!", { {"Искомый", volume}, {"Найденный", tempVolume}, {"Разница", abs(volume - tempVolume)} });
+            }
+            else
+            {
+                if (iterCRITICAL > 2 && CVector(mid).createVector(oldMid).Length() < CalculationEps / 100)
+                    throw CException("Границы построения плоскости слишком сблизились!", { {"Искомый", volume}, {"Найденный", tempVolume}, {"Разница", abs(volume - tempVolume)} });
+            }
+#endif // !NEWTON
+
+
 
             // БЛОК 3.2. ПОВТОРНЫЙ РАСЧЁТ УРАВНЕНИЯ ПЛОСКОСТИ И Т.П.
             resultFaces[0].clear();
@@ -569,12 +602,36 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
             edgePoints.clear();
             newNodeId = 0;
 
+#ifndef NEWTON
             if (tempVolume > volume)
                 endPoint = mid;
             else
                 startPoint = mid;
 
             mid = (CVector(startPoint) + endPoint) / 2.;
+#else
+            if (!isNew)
+            {
+                if (tempVolume > volume)
+                    endPoint = mid;
+                else
+                    startPoint = mid;
+
+                mid = (CVector(startPoint) + endPoint) / 2.;
+            }
+            else
+            {
+                double k = volume / tempVolume;
+                CVector currentVector = CVector(startPoint).createVector(mid);
+                CVector orthCurrentVector = currentVector.Orth();
+                double currentVectorLength = currentVector.Length();
+                oldMid = mid;
+                mid = startPoint + orthCurrentVector * currentVectorLength * k;
+            }
+#endif // !NEWTON
+
+
+           
         }
     }
 
@@ -676,6 +733,13 @@ void CIrregMesh::setEdgePoint(const int& cellNumber, const int& point1ID, const 
     for (size_t i = 0; i < neighboringCells.size(); ++i)
         setEdgePoint(neighboringCells[i], point1ID, point2ID, newPointID); // для данного ребра всех соседних клеток вызовём данную функцию
 }
+#ifdef NEWTON
+void CIrregMesh::setMode(bool newMode) noexcept
+{
+    isNew = newMode;
+}
+#endif // NEWTON
+
 
 CSurfaceNode CIrregMesh::getCellCenter(const CIrregCell& cell) const noexcept
 {

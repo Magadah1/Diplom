@@ -7,6 +7,9 @@
 #include "CSideEquation.h"
 #include "Tetrahedron.h"
 #include "CException.h"
+
+#define NEWTON
+
 class CIrregMesh
 {
 public:
@@ -26,11 +29,20 @@ public:
 	template<typename OStream>
 	void sayInfo(OStream& out);
 
+#ifdef NEWTON
+	void setMode(bool newMode) noexcept;
+#endif // NEWTON
+
+
 private:
 	CSurfaceNode getCellCenter(const CIrregCell& cell) const noexcept;
 	CSurfaceNode getFaceCenter(const CIrregFace& face) const noexcept;
 
 	std::vector<Tetrahedron> spliteCellByTetrahedrons(const CIrregCell& cell) const noexcept;
+
+#ifdef NEWTON
+	bool isNew;
+#endif // NEWTON
 };
 
 template<typename OStream>

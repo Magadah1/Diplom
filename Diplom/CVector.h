@@ -30,7 +30,7 @@ public:
         if (!l)
             return *this;
 
-        l = 1 / l;
+        l = 1. / l;
 
         x *= l;
         y *= l;
@@ -38,6 +38,17 @@ public:
 
         return *this;
     }
+    inline CVector Orth() const noexcept
+    {
+        double l = Length();
+        if (!l)
+            return CVector();
+
+        l = 1. / l;
+
+        return CVector(x * l, y * l, z * l);
+    }
+
     inline double operator*(const CVector& other) const noexcept
     {
         return x * other.x + y * other.y + z * other.z;
