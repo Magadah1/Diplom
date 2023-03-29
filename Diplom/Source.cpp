@@ -218,115 +218,205 @@ void stupidCOUT()
 	testMesh.sayInfo(std::cout);
 }
 
+#pragma once
+
 int main(int argc, char** argv)
 {
 	setlocale(0, "");
 
-	testMesh.nodes.push_back({ 0,0,5 });		//0
-	testMesh.nodes.push_back({ -3,0,3 });		//1
-	testMesh.nodes.push_back({ -2.5,-2,3 });	//2
-	testMesh.nodes.push_back({ 0,-3,3 });		//3
-	testMesh.nodes.push_back({ 2.5,-2,3 });		//4
-	testMesh.nodes.push_back({ 3,0,3 });		//5
-	testMesh.nodes.push_back({ 2.5,2,3 });		//6
-	testMesh.nodes.push_back({ 0,3,3 });		//7
-	testMesh.nodes.push_back({ -2.5,2,3 });		//8
-	testMesh.nodes.push_back({ -3,0,-3 });		//9
-	testMesh.nodes.push_back({ -2.5,-2,-3 });	//10
-	testMesh.nodes.push_back({ 0,-3,-3 });		//11
-	testMesh.nodes.push_back({ 2.5,-2,-3 });	//12
-	testMesh.nodes.push_back({ 3,0,-3 });		//13
-	testMesh.nodes.push_back({ 2.5,2,-3 });		//14
-	testMesh.nodes.push_back({ 0,3,-3 });		//15
-	testMesh.nodes.push_back({ -2.5,2,-3 });	//16
-	testMesh.nodes.push_back({ 0,0,-3 });		//17
+	// кубик
+	testMesh.nodes.push_back({ 0,0,0 }); //0
+	testMesh.nodes.push_back({ 0,0,1 }); //1
+	testMesh.nodes.push_back({ 0,1,0 }); //2
+	testMesh.nodes.push_back({ 0,1,1 }); //3
+	testMesh.nodes.push_back({ 1,0,0 }); //4
+	testMesh.nodes.push_back({ 1,0,1 }); //5 
+	testMesh.nodes.push_back({ 1,1,0 }); //6
+	testMesh.nodes.push_back({ 1,1,1 }); //7
+	CIrregFace testFace;
+	testFace.cell1 = 0;
+	testFace.cell2 = -1;
 
-	CIrregFace tFace;
-	tFace.cell1 = -1;
-	tFace.cell2 = 0;
+	testFace.nodes = { 0,4,6,2 };
+	testMesh.faces.push_back(testFace);
 
-	tFace.nodes = {1,2,0};
-	testMesh.faces.push_back(tFace);
+	testFace.nodes = { 1,3,7,5 };
+	testMesh.faces.push_back(testFace);
 
-	tFace.nodes = { 2,3,0 };
-	testMesh.faces.push_back(tFace);
+	testFace.nodes = { 1,5,4,0 };
+	testMesh.faces.push_back(testFace);
 
-	tFace.nodes = { 3,4,0 };
-	testMesh.faces.push_back(tFace);
-	
-	tFace.nodes = { 4,5,0 };
-	testMesh.faces.push_back(tFace);
+	testFace.nodes = { 3,2,6,7 };
+	testMesh.faces.push_back(testFace);
 
-	tFace.nodes = { 5,6,0 };
-	testMesh.faces.push_back(tFace);
+	testFace.nodes = { 1,0,2,3 };
+	testMesh.faces.push_back(testFace);
 
-	tFace.nodes = { 6,7,0 };
-	testMesh.faces.push_back(tFace);
+	testFace.nodes = { 7,6,4,5 };
+	testMesh.faces.push_back(testFace);
 
-	tFace.nodes = { 7,8,0 };
-	testMesh.faces.push_back(tFace);
+	CIrregCell testCell;
+	testCell.facesInd = { 0,1,2,3,4,5 };
 
-	tFace.nodes = { 8,1,0 };
-	testMesh.faces.push_back(tFace);
-
-	tFace.nodes = { 1,9,10,2 };
-	testMesh.faces.push_back(tFace);
-
-	tFace.nodes = { 2,10,11,3 };
-	testMesh.faces.push_back(tFace);
-
-	tFace.nodes = { 3,11,12,4 };
-	testMesh.faces.push_back(tFace);
-
-	tFace.nodes = { 4,12,13,5 };
-	testMesh.faces.push_back(tFace);
-
-	tFace.nodes = { 5,13,14,6 };
-	testMesh.faces.push_back(tFace);
-
-	tFace.nodes = { 6,14,15,7 };
-	testMesh.faces.push_back(tFace);
-
-	tFace.nodes = { 7,15,16,8 };
-	testMesh.faces.push_back(tFace);
-
-	tFace.nodes = { 8,16,9,1 };
-	testMesh.faces.push_back(tFace);
-
-	tFace.nodes = { 9,17,10 };
-	testMesh.faces.push_back(tFace);
-
-	tFace.nodes = { 10,17,11 };
-	testMesh.faces.push_back(tFace);
-
-	tFace.nodes = { 11,17,12 };
-	testMesh.faces.push_back(tFace);
-
-	tFace.nodes = { 12,17,13 };
-	testMesh.faces.push_back(tFace);
-
-	tFace.nodes = { 13,17,14 };
-	testMesh.faces.push_back(tFace);
-
-	tFace.nodes = { 14,17,15 };
-	testMesh.faces.push_back(tFace);
-
-	tFace.nodes = { 15,17,16 };
-	testMesh.faces.push_back(tFace);
-
-	tFace.nodes = { 16,17,9 };
-	testMesh.faces.push_back(tFace);
-
-	CIrregCell tCell;
-	tCell.facesInd = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23 };
-
-	testMesh.cells.push_back(tCell);
-	testMesh.setMode(true);
+	testMesh.cells.push_back(testCell);
 
 	initialTestMesh = testMesh;
+	
+	// херь как гробик
+	//testMesh.nodes.push_back({ 0,0,0 });	//0
+	//testMesh.nodes.push_back({ 1,0,0 });	//1
+	//testMesh.nodes.push_back({ 5,4,0 });	//2
+	//testMesh.nodes.push_back({ 5,5,0 });	//3
+	//testMesh.nodes.push_back({ 4,5,0 });	//4
+	//testMesh.nodes.push_back({ 0,1,0 });	//5
+
+	//testMesh.nodes.push_back({ 0,0,3 });	//6
+	//testMesh.nodes.push_back({ 1,0,3 });	//7
+	//testMesh.nodes.push_back({ 5,4,3 });	//8
+	//testMesh.nodes.push_back({ 5,5,3 });	//9
+	//testMesh.nodes.push_back({ 4,5,3 });	//10
+	//testMesh.nodes.push_back({ 0,1,3 });	//11
+	//
+	//CIrregFace tFace;
+	//tFace.cell1 = 0;
+	//tFace.cell2 = -1;
+
+	//tFace.nodes = { 0, 1, 2, 3, 4, 5 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 0, 6, 7, 1 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 11, 6, 0, 5 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 1, 7, 8, 2 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 9, 3, 2, 8};
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 9, 10, 4, 3 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 10, 11, 5, 4};
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 6, 11, 10, 9, 8, 7};
+	//testMesh.faces.push_back(tFace);
+
+	//CIrregCell tCell;
+	//tCell.facesInd = { 0,1,2,3,4,5,6,7 };
+
+	//testMesh.cells.push_back(tCell);
+
+	//initialTestMesh = testMesh;
+
+	// 8 угольная херня
+	//testMesh.nodes.push_back({ 0,0,5 });		//0
+	//testMesh.nodes.push_back({ -3,0,3 });		//1
+	//testMesh.nodes.push_back({ -2.5,-2,3 });	//2
+	//testMesh.nodes.push_back({ 0,-3,3 });		//3
+	//testMesh.nodes.push_back({ 2.5,-2,3 });		//4
+	//testMesh.nodes.push_back({ 3,0,3 });		//5
+	//testMesh.nodes.push_back({ 2.5,2,3 });		//6
+	//testMesh.nodes.push_back({ 0,3,3 });		//7
+	//testMesh.nodes.push_back({ -2.5,2,3 });		//8
+	//testMesh.nodes.push_back({ -3,0,-3 });		//9
+	//testMesh.nodes.push_back({ -2.5,-2,-3 });	//10
+	//testMesh.nodes.push_back({ 0,-3,-3 });		//11
+	//testMesh.nodes.push_back({ 2.5,-2,-3 });	//12
+	//testMesh.nodes.push_back({ 3,0,-3 });		//13
+	//testMesh.nodes.push_back({ 2.5,2,-3 });		//14
+	//testMesh.nodes.push_back({ 0,3,-3 });		//15
+	//testMesh.nodes.push_back({ -2.5,2,-3 });	//16
+	//testMesh.nodes.push_back({ 0,0,-3 });		//17
+
+	//CIrregFace tFace;
+	//tFace.cell1 = -1;
+	//tFace.cell2 = 0;
+
+	//tFace.nodes = { 1,2,0 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 2,3,0 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 3,4,0 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 4,5,0 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 5,6,0 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 6,7,0 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 7,8,0 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 8,1,0 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 1,9,10,2 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 2,10,11,3 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 3,11,12,4 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 4,12,13,5 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 5,13,14,6 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 6,14,15,7 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 7,15,16,8 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 8,16,9,1 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 9,17,10 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 10,17,11 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 11,17,12 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 12,17,13 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 13,17,14 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 14,17,15 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 15,17,16 };
+	//testMesh.faces.push_back(tFace);
+
+	//tFace.nodes = { 16,17,9 };
+	//testMesh.faces.push_back(tFace);
+
+	//CIrregCell tCell;
+	//tCell.facesInd = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23 };
+
+	//testMesh.cells.push_back(tCell);
+
+	//initialTestMesh = testMesh;
 
 	constexpr int total = 1e1;
-	int g{};
+	int gOld{}, gNew{}, gNewM{}, OldCan{}, NewCan{};
 	const double v = testMesh.getCellVolume(testMesh.cells[0]);
 	for (size_t i = 0; i < total; ++i)
 	{
@@ -337,20 +427,66 @@ int main(int argc, char** argv)
 			rn2 = (rn2 + 1) % testMesh.nodes.size();
 
 		double rv = static_cast<double>(rand()) / RAND_MAX * v;
+		int* ItOld = nullptr, * ItNew = nullptr, *ItNewM = nullptr;
 
 		try
 		{
-			iteract(0, testMesh.nodes[rn1], testMesh.nodes[rn2], rv, std::cout, true);
-			++g;
+			testMesh.setMode(CIrregMesh::Mode::OLD);
+			auto rOld = testMesh.FindContactBorder(0, testMesh.nodes[rn1], testMesh.nodes[rn2], rv);
+			++gOld;
+			ItOld = new int(rOld.second);
+		}
+		catch (const std::exception& e)
+		{
+			std::cout << e.what();
+		}
+		testMesh = initialTestMesh;
+		try
+		{
+			testMesh.setMode(CIrregMesh::Mode::NEW);
+			auto rNew = testMesh.FindContactBorder(0, testMesh.nodes[rn1], testMesh.nodes[rn2], rv);
+			++gNew;
+			ItNew = new int(rNew.second);
+		}
+		catch (const std::exception& e)
+		{
+			std::cout << e.what();
+		}
+		/*testMesh = initialTestMesh;
+		try
+		{
+			testMesh.setMode(CIrregMesh::Mode::NEWMODIFIED);
+			auto rNewM = testMesh.FindContactBorder(0, testMesh.nodes[rn1], testMesh.nodes[rn2], rv);
+			++gNewM;
+			ItNewM = new int(rNewM.second);
 		}
 		catch (const std::exception& e)
 		{
 
-		}
+		}*/
+		std::cout << "Iterations:\tOld = " << (ItOld ? std::to_string(*ItOld) : "none")
+			<< "\tNew = " << (ItNew ? std::to_string(*ItNew) : "none")
+			<< "\tNewModified = " << (ItNewM ? std::to_string(*ItNewM) : "none")
+			<< "\tDifNew = " << (ItOld && ItNew ? std::to_string(*ItOld - *ItNew) : "none")
+			<< "\tDifNewModidied = " << (ItOld && ItNewM ? std::to_string(*ItOld - *ItNewM) : "none") << '\n';
 
+		if (ItOld && !ItNew)
+			++OldCan;
+
+		if (!ItOld && ItNew)
+			++NewCan;
+
+		if (ItOld)
+			delete ItOld;
+		if (ItNew)
+			delete ItNew;
+		if (ItNewM)
+			delete ItNewM;
 		testMesh = initialTestMesh;
 	}
-	std::cout << "Total =" << total << "\tGood =" << g;
+	std::cout << "\nTotal goods:\tOld = " << gOld << "\tNew = " << gNew << "\tNewModified = " << gNewM;
+	std::cout << "\nTimes, when Old solved = " << OldCan << "\tNew solved = " << NewCan << '\n';
+	//std::cout << "Total =" << total << "\tGood =" << gOld;
 	return -1;
 
 	//testMesh.nodes.push_back({ 0,0,0 });	//0
@@ -601,35 +737,35 @@ int main(int argc, char** argv)
 
 	/*int maxN = 0;
 	for (const auto& el : testMesh.faces)
-		if (el.nodes.size() > maxN)
-			maxN = el.nodes.size();
+	if (el.nodes.size() > maxN)
+	maxN = el.nodes.size();
 
 	int maxF = 0;
 	for (const auto& el : testMesh.cells)
-		if (el.facesInd.size() > maxF)
-			maxF = el.facesInd.size();
+	if (el.facesInd.size() > maxF)
+	maxF = el.facesInd.size();
 
 
 	for (size_t i = 0; i < testMesh.faces.size(); ++i)
 	{
-		const CIrregFace& f = testMesh.faces[i];
-		if (maxN == f.nodes.size())
-		{
-			std::cout << i << '\t' << maxN << '\n';
-		}
+	const CIrregFace& f = testMesh.faces[i];
+	if (maxN == f.nodes.size())
+	{
+	std::cout << i << '\t' << maxN << '\n';
+	}
 	}
 	std::cout << '\n';
 	for (size_t i = 0; i < testMesh.cells.size(); ++i)
 	{
-		const CIrregCell& c = testMesh.cells[i];
-		if (maxF == c.facesInd.size())
-		{
-			std::cout << i << '\t' << maxF << '\n';
-		}
+	const CIrregCell& c = testMesh.cells[i];
+	if (maxF == c.facesInd.size())
+	{
+	std::cout << i << '\t' << maxF << '\n';
+	}
 	}*/
 
 	/*if (maxF > 6 || maxN > 4)
-		testMesh.sayInfo(std::cout);
+	testMesh.sayInfo(std::cout);
 	return -3;*/
 
 	//testMesh.FindContactBorder(19, testMesh.nodes[0], testMesh.nodes[1], 1. / 54);
@@ -646,7 +782,7 @@ int main(int argc, char** argv)
 	srand(1234512);
 
 	for (size_t i = 0; i < 2; ++i)
-		testMesh.spliteFaceByTriangles(rand() % testMesh.faces.size());
+	testMesh.spliteFaceByTriangles(rand() % testMesh.faces.size());
 
 	iteract(0, testMesh.nodes[0], testMesh.nodes[7], 0.52, std::cout, true);
 
@@ -767,27 +903,27 @@ int main(int argc, char** argv)
 
 	/*try
 	{
-		m.createRTMatrix({
-			-5 + double(rand()) / RAND_MAX * 10,
-			-5 + double(rand()) / RAND_MAX * 10,
-			-5 + double(rand()) / RAND_MAX * 10
-			},
-			{
-			-1 + double(rand()) / RAND_MAX * 2,
-			-1 + double(rand()) / RAND_MAX * 2,
-			-1 + double(rand()) / RAND_MAX * 2
-			},
-			rand() % 360,
-			false
-		);
+	m.createRTMatrix({
+	-5 + double(rand()) / RAND_MAX * 10,
+	-5 + double(rand()) / RAND_MAX * 10,
+	-5 + double(rand()) / RAND_MAX * 10
+	},
+	{
+	-1 + double(rand()) / RAND_MAX * 2,
+	-1 + double(rand()) / RAND_MAX * 2,
+	-1 + double(rand()) / RAND_MAX * 2
+	},
+	rand() % 360,
+	false
+	);
 
-		for (size_t i = 0; i < testMesh.nodes.size(); ++i)
-			testMesh.nodes[i] = m * testMesh.nodes[i];
-		iteract(0, testMesh.nodes[0], testMesh.nodes[7], double(rand()) / RAND_MAX, std::cout);
+	for (size_t i = 0; i < testMesh.nodes.size(); ++i)
+	testMesh.nodes[i] = m * testMesh.nodes[i];
+	iteract(0, testMesh.nodes[0], testMesh.nodes[7], double(rand()) / RAND_MAX, std::cout);
 	}
 	catch (const std::exception& e)
 	{
-		std::cout << e.what();
+	std::cout << e.what();
 	}*/
 
 	//double minV = 2, rv;
