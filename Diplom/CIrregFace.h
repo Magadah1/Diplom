@@ -11,5 +11,4 @@ public:
 
 	int cell1, cell2;
 	std::vector<int> nodes; // Если смотрим со стороны клетки cell1, то проходим nodes в прямом направлении, если с cell2 - то в обратном.
-
 };

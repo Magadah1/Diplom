@@ -44,6 +44,10 @@ public:
 	template<typename OStream>
 	void sayInfo(OStream& out);
 
+	void addRandomFigure(const CPoint& center);
+
+	std::vector<int> getCellNodesIds(const int& cellNumber) const;
+
 #ifdef NEWTON
 	enum class Mode
 	{

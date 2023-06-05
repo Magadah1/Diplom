@@ -86,7 +86,7 @@ void processSpecialKeys(int key, int x, int y) {
 
 void renderScene()
 {
-	glClearColor(0, 0, 0, 0);
+	glClearColor(1,1,1,0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	//glLoadIdentity();
@@ -95,7 +95,7 @@ void renderScene()
 	glRotatef(225, 0, 0,1);
 	glRotatef(45, -1, 1, 0);*/
 
-	glBegin(GL_LINES);
+	/*glBegin(GL_LINES);
 	{
 		glColor3f(1, 0, 0);
 		glVertex3f(0, 0, 0);
@@ -109,13 +109,23 @@ void renderScene()
 		glVertex3f(0, 0, 0);
 		glVertex3f(0, 0, 2);
 	}
-	glEnd();
+	glEnd();*/
+	glLineWidth(3);
 	if (wtd == testMesh.cells.size())
 	{
 		for (size_t i = 0; i < wtd; ++i)
 		{
-			const CIrregCell& cell = testMesh.cells[i]; 
-			setRandColor(i);
+			const CIrregCell& cell = testMesh.cells[i];
+			if (wtd == 1)
+				glColor3f(88. / 255, 196. / 255, 221. / 255);
+			else if (i == 0)
+				glColor3f(0xFF / 255., 0x45 / 255., 0);
+			else if (i == 1)
+				glColor3f(0x6B / 255., 0xE4 / 255., 0);
+			else if (i == 2)
+				glColor3f(0x0A / 255., 0x64 / 255., 0xA4 / 255.);
+			else
+				setRandColor(i);
 			
 			for (size_t faceID = 0; faceID < cell.facesInd.size(); ++faceID)
 			{
@@ -136,7 +146,14 @@ void renderScene()
 	else if (wtd != -1)
 	{
 		const CIrregCell& cell = testMesh.cells[wtd];
-		setRandColor(wtd);
+		if (wtd == 0)
+			glColor3f(0xFF / 255., 0x45 / 255., 0);
+		else if (wtd == 1)
+			glColor3f(0x6B / 255., 0xE4 / 255., 0);
+		else if (wtd == 2)
+			glColor3f(0x0A / 255., 0x64 / 255., 0xA4 / 255.);
+		else
+			setRandColor(wtd);
 
 		for (size_t faceID = 0; faceID < cell.facesInd.size(); ++faceID)
 		{
@@ -163,17 +180,34 @@ void changeSize(int w, int h)
 	glLoadIdentity();
 
 	glViewport(0, 0, w, h);
-	glOrtho(-4, 4, -4, 4, -4, 4);
+	glOrtho(-3, 3, -3, 3, -3, 3);
 
-	glRotatef(-90, 1, 0, 0);
-	glRotatef(225, 0, 0,1);
-	glRotatef(45, -1, 1, 0);
+	//glRotatef(-135, 1, 0, 0);			//2
+	//glRotatef(75, 0, 1, 0); //3			//2
+	//glRotatef(-35, 1, 0, 0);//3			//2
+
+	glRotatef(-90, 1, 0, 0);//1			//2
+	glRotatef(225, 0, 0,1);	//1			//2
+	glRotatef(45, -1, 1, 0);//1			//2
 
 	glMatrixMode(GL_MODELVIEW);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_LINE_SMOOTH);
+	glEnable(GL_POLYGON_SMOOTH);
+	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+	glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 }
 
+std::chrono::microseconds avgTime{};
+int avgIter{};
+int total{};
+int minIter = 100000;
+int maxIter = -1;
+
 template <typename OStream>
-void iteract(int cellNumber, CPoint start, CPoint end, double volume, OStream& OUT, bool log = false)
+void iteract(int cellNumber, CPoint start, CPoint end, double volume, OStream& OUT, bool log = false, bool nextThrow = false)
 {
 	
 	std::pair<int, int> res;
@@ -185,6 +219,15 @@ void iteract(int cellNumber, CPoint start, CPoint end, double volume, OStream& O
 		std::chrono::microseconds timeDiff = std::chrono::duration_cast<std::chrono::microseconds>(endT - startT);
 		if (log)
 			OUT << "\n----Volume = " << volume << "\tIterations = " << res.second << " with in " << timeDiff.count() << " microseconds with volume = " << testMesh.getCellVolume(testMesh.cells[cellNumber]) << '\n';
+		if (res.second != 1 && res.second <= 100)
+		{
+			avgTime += timeDiff;
+			avgIter += res.second;
+			++total;
+
+			if (res.second > maxIter) maxIter = res.second;
+			if (res.second < minIter) minIter= res.second;
+		}
 	}
 	catch (const std::exception& e)
 	{
@@ -207,7 +250,8 @@ void iteract(int cellNumber, CPoint start, CPoint end, double volume, OStream& O
 			OUT << "\nError = " << e.what();
 			OUT << "Volume = " << volume << '\n';
 		}
-		throw e;
+		if (nextThrow)
+			throw e;
 	}
 
 	
@@ -218,49 +262,139 @@ void stupidCOUT()
 	testMesh.sayInfo(std::cout);
 }
 
-#pragma once
-
 int main(int argc, char** argv)
 {
 	setlocale(0, "");
+	return -1;
+	/*for (int i = 0; i < 100; ++i)
+		testMesh.addRandomFigure(CPoint(
+			-100 + 200. * rand() / RAND_MAX,
+			-100 + 200. * rand() / RAND_MAX,
+			-100 + 200. * rand() / RAND_MAX));
+
+	int startCellsCount = testMesh.cells.size();
+
+	testMesh.setMode(CIrregMesh::Mode::OLD);
+
+	for (int i = 0; i < startCellsCount; ++i)
+	{
+		const CIrregCell& cell = testMesh.cells[i];
+		std::vector<int> nodes = testMesh.getCellNodesIds(i);
+
+		int rN1 = nodes[0] + rand() % nodes.size();
+		int rN2 = nodes[0] + rand() % nodes.size();
+
+		if (rN1 == rN2)
+			++rN2;
+
+		rN2 = nodes[0] + (rN2 - nodes[0]) % nodes.size();
+
+		const CSurfaceNode& node1 = testMesh.nodes[rN1];
+		const CSurfaceNode& node2 = testMesh.nodes[rN2];
+
+		CSideEquation plane(CVector(node1).createVector(node2).Norm());
+
+		try
+		{
+			plane.recalcD(node1);
+			double v1 = testMesh.getCutOffCellVolume(i, plane);
+
+			plane.recalcD(node2);
+			double v2 = testMesh.getCutOffCellVolume(i, plane);
+
+			double randV = v1 + (v2 - v1) * rand() / RAND_MAX;
+
+
+			iteract(i, testMesh.nodes[rN1], testMesh.nodes[rN2], randV, std::cout, true);
+		}
+		catch (const std::exception& e)
+		{
+			std::cout << e.what();
+		}
+		
+	}
+	return -1;*/
+
 
 	// кубик
-	testMesh.nodes.push_back({ 0,0,0 }); //0
-	testMesh.nodes.push_back({ 0,0,1 }); //1
-	testMesh.nodes.push_back({ 0,1,0 }); //2
-	testMesh.nodes.push_back({ 0,1,1 }); //3
-	testMesh.nodes.push_back({ 1,0,0 }); //4
-	testMesh.nodes.push_back({ 1,0,1 }); //5 
-	testMesh.nodes.push_back({ 1,1,0 }); //6
-	testMesh.nodes.push_back({ 1,1,1 }); //7
-	CIrregFace testFace;
-	testFace.cell1 = 0;
-	testFace.cell2 = -1;
+	//testMesh.nodes.push_back({ 0,0,0 }); //0
+	//testMesh.nodes.push_back({ 0,0,1 }); //1
+	//testMesh.nodes.push_back({ 0,1,0 }); //2
+	//testMesh.nodes.push_back({ 0,1,1 }); //3
+	//testMesh.nodes.push_back({ 1,0,0 }); //4
+	//testMesh.nodes.push_back({ 1,0,1 }); //5 
+	//testMesh.nodes.push_back({ 1,1,0 }); //6
+	//testMesh.nodes.push_back({ 1,1,1 }); //7
+	//CIrregFace testFace;
+	//testFace.cell1 = 0;
+	//testFace.cell2 = -1;
 
-	testFace.nodes = { 0,4,6,2 };
-	testMesh.faces.push_back(testFace);
+	//testFace.nodes = { 0,4,6,2 };
+	//testMesh.faces.push_back(testFace);
 
-	testFace.nodes = { 1,3,7,5 };
-	testMesh.faces.push_back(testFace);
+	//testFace.nodes = { 1,3,7,5 };
+	//testMesh.faces.push_back(testFace);
 
-	testFace.nodes = { 1,5,4,0 };
-	testMesh.faces.push_back(testFace);
+	//testFace.nodes = { 1,5,4,0 };
+	//testMesh.faces.push_back(testFace);
 
-	testFace.nodes = { 3,2,6,7 };
-	testMesh.faces.push_back(testFace);
+	//testFace.nodes = { 3,2,6,7 };
+	//testMesh.faces.push_back(testFace);
 
-	testFace.nodes = { 1,0,2,3 };
-	testMesh.faces.push_back(testFace);
+	//testFace.nodes = { 1,0,2,3 };
+	//testMesh.faces.push_back(testFace);
 
-	testFace.nodes = { 7,6,4,5 };
-	testMesh.faces.push_back(testFace);
+	//testFace.nodes = { 7,6,4,5 };
+	//testMesh.faces.push_back(testFace);
 
-	CIrregCell testCell;
-	testCell.facesInd = { 0,1,2,3,4,5 };
+	//CIrregCell testCell;
+	//testCell.facesInd = { 0,1,2,3,4,5 };
 
-	testMesh.cells.push_back(testCell);
+	//testMesh.cells.push_back(testCell);
 
-	initialTestMesh = testMesh;
+	//initialTestMesh = testMesh;
+	//srand(static_cast<unsigned>(time(nullptr)));
+
+	//for (size_t i = 0; i != 2; ++i)
+	//{
+
+	//	int N1 = rand() % testMesh.nodes.size();
+	//	int N2 = rand() % testMesh.nodes.size();
+
+	//	if (N1 == N2)
+	//		N2 = (N2 + 1) % testMesh.nodes.size();
+
+	//	CSurfaceNode& n1 = testMesh.nodes[N1];
+	//	CSurfaceNode& n2 = testMesh.nodes[N2];
+	//	CSideEquation side(CVector(n1).createVector(n2));
+
+	//	side.recalcD(n1);
+	//	double v1 = testMesh.getCutOffCellVolume(0, side);
+	//	side.recalcD(n2);
+	//	double v2 = testMesh.getCutOffCellVolume(0, side);
+	//	double rv = v1 + (v2 - v1) * rand() / RAND_MAX;
+	//	iteract(0, n1, n2, rv, std::cout, true);
+	//};
+
+	
+	/*const double cV = testMesh.getCellVolume(testMesh.cells[0]);
+	for (size_t i = 0; i != 1000; ++i)
+	{
+		int N1 = rand() % testMesh.nodes.size();
+		int N2 = rand() % testMesh.nodes.size();
+
+		if (N1 == N2)
+			N2 = (N2 + 1) % testMesh.nodes.size();
+
+		double rV = cV * rand() / RAND_MAX;
+		iteract(0, testMesh.nodes[N1], testMesh.nodes[N2], rV, std::cout, true);
+
+		testMesh = initialTestMesh;
+	}*/
+
+	//std::cout << "\n\nAvg:\nTotal = " << total << "\tAvgIter = " << avgIter / total << "\tAvgTime = " << avgTime.count() / total 
+	//	<< "\tRange = (" << minIter << " - " << maxIter << ')';
+	//return 21;
 	
 	// херь как гробик
 	//testMesh.nodes.push_back({ 0,0,0 });	//0
@@ -309,28 +443,76 @@ int main(int argc, char** argv)
 	//tCell.facesInd = { 0,1,2,3,4,5,6,7 };
 
 	//testMesh.cells.push_back(tCell);
+	//
+	//for (size_t i = 0; i != testMesh.nodes.size(); ++i)
+	//{
+	//	CSurfaceNode& node = testMesh.nodes[i];
+	//	node.likeCPoint() -= CPoint(2.5, 2.5, 2.5);
+	//}
 
 	//initialTestMesh = testMesh;
+	/*srand(static_cast<unsigned>(time(nullptr)));
+	int N1 = rand() % testMesh.nodes.size();
+	int N2 = rand() % testMesh.nodes.size();
+
+	if (N1 == N2)
+		N2 = (N2 + 1) % testMesh.nodes.size();
+
+	CSurfaceNode& n1 = testMesh.nodes[N1];
+	CSurfaceNode& n2 = testMesh.nodes[N2];
+	CSideEquation side(CVector(n1).createVector(n2));
+
+	side.recalcD(n1);
+	double v1 = testMesh.getCutOffCellVolume(0, side);
+	side.recalcD(n2);
+	double v2 = testMesh.getCutOffCellVolume(0, side);
+	double rv = v1 + (v2 - v1) * rand() / RAND_MAX;
+	iteract(0, n1, n2, rv, std::cout, true);*/
+	/*for (size_t i = 0; i != 1000; ++i)
+	{
+		int N1 = rand() % testMesh.nodes.size();
+		int N2 = rand() % testMesh.nodes.size();
+
+		if (N1 == N2)
+			N2 = (N2 + 1) % testMesh.nodes.size();
+
+		CSurfaceNode& n1 = testMesh.nodes[N1];
+		CSurfaceNode& n2 = testMesh.nodes[N2];
+		CSideEquation side(CVector(n1).createVector(n2));
+
+		side.recalcD(n1);
+		double v1 = testMesh.getCutOffCellVolume(0, side);
+		side.recalcD(n2);
+		double v2 = testMesh.getCutOffCellVolume(0, side);
+		double rv = v1 + (v2 - v1) * rand() / RAND_MAX;
+		iteract(0, n1, n2, rv, std::cout, true);
+
+		testMesh = initialTestMesh;
+	}*/
+
+	/*std::cout << "\n\nAvg:\nTotal = " << total << "\tAvgIter = " << avgIter / total << "\tAvgTime = " << avgTime.count() / total 
+		<< "\tRange = (" << minIter << " - " << maxIter << ')';
+	return 21;*/
 
 	// 8 угольная херня
-	//testMesh.nodes.push_back({ 0,0,5 });		//0
-	//testMesh.nodes.push_back({ -3,0,3 });		//1
-	//testMesh.nodes.push_back({ -2.5,-2,3 });	//2
-	//testMesh.nodes.push_back({ 0,-3,3 });		//3
-	//testMesh.nodes.push_back({ 2.5,-2,3 });		//4
-	//testMesh.nodes.push_back({ 3,0,3 });		//5
-	//testMesh.nodes.push_back({ 2.5,2,3 });		//6
-	//testMesh.nodes.push_back({ 0,3,3 });		//7
-	//testMesh.nodes.push_back({ -2.5,2,3 });		//8
-	//testMesh.nodes.push_back({ -3,0,-3 });		//9
-	//testMesh.nodes.push_back({ -2.5,-2,-3 });	//10
-	//testMesh.nodes.push_back({ 0,-3,-3 });		//11
-	//testMesh.nodes.push_back({ 2.5,-2,-3 });	//12
-	//testMesh.nodes.push_back({ 3,0,-3 });		//13
-	//testMesh.nodes.push_back({ 2.5,2,-3 });		//14
-	//testMesh.nodes.push_back({ 0,3,-3 });		//15
-	//testMesh.nodes.push_back({ -2.5,2,-3 });	//16
-	//testMesh.nodes.push_back({ 0,0,-3 });		//17
+	//testMesh.nodes.push_back({ 0,0,4 });		//0
+	//testMesh.nodes.push_back({ -3,0,2 });		//1
+	//testMesh.nodes.push_back({ -2.5,-2,2 });	//2
+	//testMesh.nodes.push_back({ 0,-3,2 });		//3
+	//testMesh.nodes.push_back({ 2.5,-2,2 });		//4
+	//testMesh.nodes.push_back({ 3,0,2 });		//5
+	//testMesh.nodes.push_back({ 2.5,2,2 });		//6
+	//testMesh.nodes.push_back({ 0,3,2 });		//7
+	//testMesh.nodes.push_back({ -2.5,2,2 });		//8
+	//testMesh.nodes.push_back({ -3,0,-2 });		//9
+	//testMesh.nodes.push_back({ -2.5,-2,-2 });	//10
+	//testMesh.nodes.push_back({ 0,-3,-2 });		//11
+	//testMesh.nodes.push_back({ 2.5,-2,-2 });	//12
+	//testMesh.nodes.push_back({ 3,0,-2 });		//13
+	//testMesh.nodes.push_back({ 2.5,2,-2 });		//14
+	//testMesh.nodes.push_back({ 0,3,-2 });		//15
+	//testMesh.nodes.push_back({ -2.5,2,-2 });	//16
+	//testMesh.nodes.push_back({ 0,0,-4 });		//17
 
 	//CIrregFace tFace;
 	//tFace.cell1 = -1;
@@ -414,80 +596,124 @@ int main(int argc, char** argv)
 	//testMesh.cells.push_back(tCell);
 
 	//initialTestMesh = testMesh;
+	//srand(static_cast<unsigned>(time(nullptr)));
+	//int N1 = rand() % testMesh.nodes.size();
+	//int N2 = rand() % testMesh.nodes.size();
 
-	constexpr int total = 1e1;
-	int gOld{}, gNew{}, gNewM{}, OldCan{}, NewCan{};
-	const double v = testMesh.getCellVolume(testMesh.cells[0]);
-	for (size_t i = 0; i < total; ++i)
+	//if (N1 == N2)
+	//	N2 = (N2 + 1) % testMesh.nodes.size();
+
+	//CSurfaceNode& n1 = testMesh.nodes[N1];
+	//CSurfaceNode& n2 = testMesh.nodes[N2];
+	//CSideEquation side(CVector(n1).createVector(n2));
+
+	//side.recalcD(n1);
+	//double v1 = testMesh.getCutOffCellVolume(0, side);
+	//side.recalcD(n2);
+	//double v2 = testMesh.getCutOffCellVolume(0, side);
+	//double rv = v1 + (v2 - v1) * rand() / RAND_MAX;
+	//iteract(0, n1, n2, rv, std::cout, true);
+	/*for (size_t i = 0; i != 1000; ++i)
 	{
-		int rn1 = rand() % testMesh.nodes.size();
-		int rn2 = rand() % testMesh.nodes.size();
+		int N1 = rand() % testMesh.nodes.size();
+		int N2 = rand() % testMesh.nodes.size();
 
-		if (rn2 == rn1)
-			rn2 = (rn2 + 1) % testMesh.nodes.size();
+		if (N1 == N2)
+			N2 = (N2 + 1) % testMesh.nodes.size();
 
-		double rv = static_cast<double>(rand()) / RAND_MAX * v;
-		int* ItOld = nullptr, * ItNew = nullptr, *ItNewM = nullptr;
+		CSurfaceNode& n1 = testMesh.nodes[N1];
+		CSurfaceNode& n2 = testMesh.nodes[N2];
+		CSideEquation side(CVector(n1).createVector(n2));
 
-		try
-		{
-			testMesh.setMode(CIrregMesh::Mode::OLD);
-			auto rOld = testMesh.FindContactBorder(0, testMesh.nodes[rn1], testMesh.nodes[rn2], rv);
-			++gOld;
-			ItOld = new int(rOld.second);
-		}
-		catch (const std::exception& e)
-		{
-			std::cout << e.what();
-		}
-		testMesh = initialTestMesh;
-		try
-		{
-			testMesh.setMode(CIrregMesh::Mode::NEW);
-			auto rNew = testMesh.FindContactBorder(0, testMesh.nodes[rn1], testMesh.nodes[rn2], rv);
-			++gNew;
-			ItNew = new int(rNew.second);
-		}
-		catch (const std::exception& e)
-		{
-			std::cout << e.what();
-		}
-		/*testMesh = initialTestMesh;
-		try
-		{
-			testMesh.setMode(CIrregMesh::Mode::NEWMODIFIED);
-			auto rNewM = testMesh.FindContactBorder(0, testMesh.nodes[rn1], testMesh.nodes[rn2], rv);
-			++gNewM;
-			ItNewM = new int(rNewM.second);
-		}
-		catch (const std::exception& e)
-		{
+		side.recalcD(n1);
+		double v1 = testMesh.getCutOffCellVolume(0, side);
+		side.recalcD(n2);
+		double v2 = testMesh.getCutOffCellVolume(0, side);
+		double rv = v1 + (v2 - v1) * rand() / RAND_MAX;
+		iteract(0, n1, n2, rv, std::cout, true);
 
-		}*/
-		std::cout << "Iterations:\tOld = " << (ItOld ? std::to_string(*ItOld) : "none")
-			<< "\tNew = " << (ItNew ? std::to_string(*ItNew) : "none")
-			<< "\tNewModified = " << (ItNewM ? std::to_string(*ItNewM) : "none")
-			<< "\tDifNew = " << (ItOld && ItNew ? std::to_string(*ItOld - *ItNew) : "none")
-			<< "\tDifNewModidied = " << (ItOld && ItNewM ? std::to_string(*ItOld - *ItNewM) : "none") << '\n';
-
-		if (ItOld && !ItNew)
-			++OldCan;
-
-		if (!ItOld && ItNew)
-			++NewCan;
-
-		if (ItOld)
-			delete ItOld;
-		if (ItNew)
-			delete ItNew;
-		if (ItNewM)
-			delete ItNewM;
 		testMesh = initialTestMesh;
 	}
-	std::cout << "\nTotal goods:\tOld = " << gOld << "\tNew = " << gNew << "\tNewModified = " << gNewM;
-	std::cout << "\nTimes, when Old solved = " << OldCan << "\tNew solved = " << NewCan << '\n';
-	//std::cout << "Total =" << total << "\tGood =" << gOld;
-	return -1;
+
+
+	std::cout << "\n\nAvg:\nTotal = " << total << "\tAvgIter = " << avgIter / total << "\tAvgTime = " << avgTime.count() / total 
+		<< "\tRange = (" << minIter << " - " << maxIter << ')';
+	return 21;*/
+
+
+	//constexpr int total = 1e5;
+	//int gOld{}, gNew{}, gNewM{}, OldCan{}, NewCan{};
+	//const double v = testMesh.getCellVolume(testMesh.cells[0]);
+	//for (size_t i = 0; i < total; ++i)
+	//{
+	//	int rn1 = rand() % testMesh.nodes.size();
+	//	int rn2 = rand() % testMesh.nodes.size();
+
+	//	if (rn2 == rn1)
+	//		rn2 = (rn2 + 1) % testMesh.nodes.size();
+
+	//	double rv = static_cast<double>(rand()) / RAND_MAX * v;
+	//	int* ItOld = nullptr, * ItNew = nullptr, *ItNewM = nullptr;
+
+	//	try
+	//	{
+	//		testMesh.setMode(CIrregMesh::Mode::OLD);
+	//		auto rOld = testMesh.FindContactBorder(0, testMesh.nodes[rn1], testMesh.nodes[rn2], rv);
+	//		++gOld;
+	//		ItOld = new int(rOld.second);
+	//	}
+	//	catch (const std::exception& e)
+	//	{
+	//		std::cout << e.what();
+	//	}
+	//	testMesh = initialTestMesh;
+	//	try
+	//	{
+	//		testMesh.setMode(CIrregMesh::Mode::NEW);
+	//		auto rNew = testMesh.FindContactBorder(0, testMesh.nodes[rn1], testMesh.nodes[rn2], rv);
+	//		++gNew;
+	//		ItNew = new int(rNew.second);
+	//	}
+	//	catch (const std::exception& e)
+	//	{
+	//		std::cout << e.what();
+	//	}
+	//	/*testMesh = initialTestMesh;
+	//	try
+	//	{
+	//		testMesh.setMode(CIrregMesh::Mode::NEWMODIFIED);
+	//		auto rNewM = testMesh.FindContactBorder(0, testMesh.nodes[rn1], testMesh.nodes[rn2], rv);
+	//		++gNewM;
+	//		ItNewM = new int(rNewM.second);
+	//	}
+	//	catch (const std::exception& e)
+	//	{
+
+	//	}*/
+	//	std::cout << "Iterations:\tOld = " << (ItOld ? std::to_string(*ItOld) : "none")
+	//		<< "\tNew = " << (ItNew ? std::to_string(*ItNew) : "none")
+	//		<< "\tNewModified = " << (ItNewM ? std::to_string(*ItNewM) : "none")
+	//		<< "\tDifNew = " << (ItOld && ItNew ? std::to_string(*ItOld - *ItNew) : "none")
+	//		<< "\tDifNewModidied = " << (ItOld && ItNewM ? std::to_string(*ItOld - *ItNewM) : "none") << '\n';
+
+	//	if (ItOld && !ItNew)
+	//		++OldCan;
+
+	//	if (!ItOld && ItNew)
+	//		++NewCan;
+
+	//	if (ItOld)
+	//		delete ItOld;
+	//	if (ItNew)
+	//		delete ItNew;
+	//	if (ItNewM)
+	//		delete ItNewM;
+	//	testMesh = initialTestMesh;
+	//}
+	//std::cout << "\nTotal goods:\tOld = " << gOld << "\tNew = " << gNew << "\tNewModified = " << gNewM;
+	//std::cout << "\nTimes, when Old solved = " << OldCan << "\tNew solved = " << NewCan << '\n';
+	////std::cout << "Total =" << total << "\tGood =" << gOld;
+	//return -1;
 
 	//testMesh.nodes.push_back({ 0,0,0 });	//0
 	//testMesh.nodes.push_back({ 1,0,0 });	//1

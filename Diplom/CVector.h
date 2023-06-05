@@ -53,6 +53,14 @@ public:
     {
         return x * other.x + y * other.y + z * other.z;
     }
+    inline CVector operator+(const CVector& other) const noexcept
+    {
+        return CVector(x + other.x, y + other.y, z + other.z);
+    }
+    inline CVector operator-(const CVector& other) const noexcept
+    {
+        return CVector(x - other.x, y - other.y, z - other.z);
+    }
     inline CVector operator*(const double& n) const noexcept
     {
         return CVector(x * n, y * n, z * n);
@@ -61,13 +69,13 @@ public:
     {
         return CVector(x / n, y / n, z / n);
     }
-    inline CVector operator+(const CVector& other) const noexcept
+    inline CVector operator+(const double& n) const noexcept
     {
-        return CVector(x + other.x, y + other.y, z + other.z);
+        return CVector(x + n, y + n, z + n);
     }
-    inline CVector operator-(const CVector& other) const noexcept
+    inline CVector operator-(const double& n) const noexcept
     {
-        return CVector(x - other.x, y - other.y, z - other.z);
+        return CVector(x - n, y - n, z - n);
     }
     inline CVector& operator+=(const CVector& other) noexcept
     {

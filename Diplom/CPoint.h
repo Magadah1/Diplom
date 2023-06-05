@@ -60,4 +60,3 @@ public:
 protected:
 	double x, y, z;
 };
-

@@ -19,16 +19,15 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
     const CIrregCell& cell = cells[cellNumber]; // получаем клетку сетки
     const double cellV = getCellVolume(cell);
 
-    if (cellV < volume)
-        throw std::exception("Искомый объём больше объёма самой ячейки!\n");
-    else if (volume < CalculationEps)
-        throw std::exception("Смысл отрезать 0ой объём?\n");
-
     double volumeAtStart = getCutOffCellVolume(cellNumber, CSideEquation(CVector(startPoint).createVector(endPoint), startPoint));
     double volumeAtEnd = getCutOffCellVolume(cellNumber, CSideEquation(CVector(startPoint).createVector(endPoint), endPoint));
 
     if (volume < volumeAtStart || volume > volumeAtEnd)
         throw std::exception("Искомый объём не может быть найден в заданных границах поиска!\n");
+    else if (cellV - CalculationEps < volume)
+        throw std::exception("Искомый объём больше объёма самой ячейки!\n");
+    else if (volume < CalculationEps)
+        throw std::exception("Смысл отрезать 0ой объём?\n");
 
     CPoint* hope = nullptr; // если повезло, то объём прямо на одной из границ диапазона
     if (abs(volume - volumeAtStart) < CalculationEps)
@@ -36,7 +35,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
     else if (abs(volume - volumeAtEnd) < CalculationEps)
         hope = &endPoint;
 
-    CPoint mid, oldMid;
+    CPoint mid, oldMid, oldTempMid;
     double k0 = volume / cellV;
 
     if (!hope)
@@ -65,32 +64,49 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
     int newNodeId = 0; // Для каждой новой вершины добавим индекс. Они будут отрицательными, но в их массиве будут реверсироваться.
 
     // Объём отсекаем по противоположную сторону от нормали плоскости
-    double tempVolume{};
+    double tempVolume{}, oldTempVolume{};
 
-    std::vector<CIrregFace> resultFaces[2]; // Стороны новых клеток; СТРАННО 0 - клетка по другую сторону от нормали, 1 - другая.
-    std::vector<CSurfaceNode> planePoints; // Новые вершины, которые могут получится при пересечении с плоскостью отсечения. С "отрицательным индексом" у ранее поделённых сторон.
-    std::vector<int> rightUniquiePlanePoints; // Тут будут лишь уникальные точки плоскости, причём расположенные в правильном (друг за другом) порядке.
-    std::vector<std::pair<int, int>> existingPointsIDs; // Если для отрицательного индекса существует вершина в исходной сетке, то потом индекс будет ссылаться на неё. first - отрицательный индекс, second - исходный.
+    // Стороны новых ячеек; 0 - ячейка по другую сторону от нормали, 1 - другая.
+    std::vector<CIrregFace> resultFaces[2];
 
-    // 0 - индекс исходной стороны, 1 - индекс в resultFaces[0], 2 - индекс в resultFaces[1]. Если нет разбиения у стороны для новой клетки, то индекс 1 или 2 будет равен -1; Связи старых сторон с потенциально новыми.
+    // Новые узлы, которые могут получится при пересечении с плоскостью отсечения. 
+    // С "отрицательным индексом" у ранее поделённых сторон.
+    std::vector<CSurfaceNode> planePoints;
+
+    // Тут будут лишь уникальные точки контактной плоскости, причём расположенные в правильном (друг за другом) порядке.
+    std::vector<int> rightUniquiePlanePoints;
+
+    // Если для отрицательного индекса существует узел в исходной сетке, то потом индекс будет ссылаться на него. 
+    // first - отрицательный индекс, second - исходный.
+    std::vector<std::pair<int, int>> existingPointsIDs; 
+
+    // 0 - индекс исходной стороны, 1 - индекс в resultFaces[0], 2 - индекс в resultFaces[1]. 
+    // Если нет разбиения у стороны для новой ячейки, то индекс 1 или 2 будет равен -1; 
+    // Связи старых сторон с потенциально новыми.
     std::vector<INT3> faceSplit; 
     faceSplit.reserve(cell.facesInd.size());
 
-    // 0 - номер исходной грани, 1 - одна из точек ребра, 2 - оставшаяся точка ребра. [{(Они опорядочены по возрастанию индексов.)}] 3 - индекс новой точки, находящейся между этих двух; Изначально индексы новых точек отрицательные.
+    // 0 - номер исходной грани, 1 - один из узлов ребра, 2 - оставшийся узел ребра.
+    // 3 - индекс нового узла, находящегося между этими двумя; 
+    // Изначально индексы новых узлов отрицательные.
     std::vector<INT4> edgePoints;
 
+    // Контактная плоскость
+    CIrregFace planeFace;
+
+    // Геометрический центр отсекаемой части ячейки
+    CVector volumeCenter;
+
     size_t iterCRITICAL{ 1 };
+    const size_t maxIterCRITICAL{ 9999 };
 
     // БЛОК 1. РАЗБИЕНИЕ КЛЕТКИ НА 2
     while (true)
     {
         plane.recalcD(mid); // теперь плоскость проходит через точку mid
+        planeFace = CIrregFace();
+        volumeCenter = CVector();
         // БЛОК 1.1. РАЗБИВАЕМ КЛЕТКУ НА 2 С ПОМОЩЬЮ ПЛОСКОСТИ.
-        
-        // код переехал в функцию getCutOffCellVolume
-        CIrregFace planeFace;
-        CVector volumeCenter;
-
         tempVolume = getCutOffCellVolume(cellNumber, plane,
             resultFaces,
             &planePoints,
@@ -103,8 +119,11 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
         // код переехал в функцию getCutOffCellVolume
 
         // БЛОК 3. СРАВНЕНИЕ ОБЪЕМОВ.
-        if (abs(tempVolume - volume) < CalculationEps) // проверяем, сколько объёма нашли
+        if (abs(tempVolume - volume) < CalculationEps ||  iterCRITICAL == maxIterCRITICAL && abs(tempVolume - volume) < CalculationEps * 1e1) // проверяем, сколько объёма нашли
         {
+            if (planeFace.nodes.size() < 3)
+                return { cellNumber, iterCRITICAL };
+
             // БЛОК 3.1. ИЗМЕНЕНИЕ ДАННЫХ В ИСХОДНОЙ СЕТКЕ.
             const CVector N0 = planePoints[-planeFace.nodes[0] - 1];
             const CVector N1 = planePoints[-planeFace.nodes[1] - 1];
@@ -137,7 +156,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                     nodes.push_back(planePoints[i]);
             }
 
-            //const int positiveNodeID = nodes.size(); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            //const int          = nodes.size(); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             //nodes.insert(nodes.end(), planePoints.begin(), planePoints.end()); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             // Поэтапно заменим все отрицательные индексы у узлов на новые индексы из общего массива
@@ -145,7 +164,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
             for (size_t i = 0; i < planeFace.nodes.size(); ++i)
             {
                 int& id = planeFace.nodes[i]; // они все отрицательные <= -1 : (-1, -2, -3 ...)
-                
+
                 if (id >= 0)
                     throw std::exception("Был положительный индекс. Глупость.\n"); // уже не глупость....
 
@@ -163,7 +182,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                         ++countExistingPointsBelowThis;
 
                 if (!was)
-                    id = positiveNodeID - 1 - (countExistingPointsBelowThis + id); 
+                    id = positiveNodeID - 1 - (countExistingPointsBelowThis + id);
             }
             for (size_t i = 0; i < 2; ++i)
             {
@@ -233,7 +252,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
                 {
                     newCell.facesInd.push_back(initialFaceId); // новая клетка имеет ту грань нетронутой, кроме связи.
 
-                    initialFace.cell1 == cellNumber ? initialFace.cell1 = newCellId : initialFace.cell2 = newCellId; // нетронутая грань теперь вместо изначальной клетки ссылается на новую.
+                    (initialFace.cell1 == cellNumber) ? initialFace.cell1 = newCellId : initialFace.cell2 = newCellId; // нетронутая грань теперь вместо изначальной клетки ссылается на новую.
 
                     *std::find(initialCell.facesInd.begin(), initialCell.facesInd.end(), initialFaceId) = -1; // исходная клетка больше не имеет доступа к данной грани. (пока имеет, потом уберём)
                 }
@@ -281,7 +300,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
         {
             // БЛОК 3.2. ПОВТОРНЫЙ РАСЧЁТ УРАВНЕНИЯ ПЛОСКОСТИ И Т.П.
             ++iterCRITICAL;
-            if (iterCRITICAL > 10000)
+            if (iterCRITICAL > maxIterCRITICAL+1)
                 throw CException("Было более десяти тысяч итераций! Проверьте границы поиска!", { {"Искомый", volume}, {"Найденный", tempVolume}, {"Разница", abs(volume - tempVolume)} });
 #ifndef NEWTON
             if ((CVector(startPoint) - endPoint).Length() < CalculationEps / 10)
@@ -289,7 +308,7 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
 #else
             if (mode == Mode::OLD)
             {
-                if ((CVector(startPoint) - endPoint).Length() < CalculationEps / 10)
+                if ((CVector(startPoint) - endPoint).Length() < CalculationEps / 1e4)
                     throw CException("Границы построения плоскости слишком сблизились!", { {"Искомый", volume}, {"Найденный", tempVolume}, {"Разница", abs(volume - tempVolume)} });
             }
             else
@@ -324,17 +343,34 @@ std::pair<int, int> CIrregMesh::FindContactBorder(const int& cellNumber, CPoint 
 
                 mid = (CVector(startPoint) + endPoint) / 2.;
             }
-            else// if (mode == Mode::NEW || NEWMODIFIED)
+            else if (mode == Mode::NEW || iterCRITICAL == 2)
             {
                 double k = volume / tempVolume;
                 CVector currentVector = CVector(startPoint).createVector(mid);
                 CVector orthCurrentVector = currentVector.Orth();
                 double currentVectorLength = currentVector.Length();
+                if (mode == Mode::NEW)
+                    oldMid = mid;
+                else
+                    oldTempMid = mid;////////////
+
+                oldTempVolume = tempVolume;//////
+
+
+
+                /*if (mode == Mode::NEW)
+                    mid = startPoint + orthCurrentVector * currentVectorLength * k;
+                else*/
+                    mid = startPoint + orthCurrentVector * currentVectorLength * k0;
+            }
+            else // if (mode == NEWMODIFIED)
+            {
+                //oldTempMid = oldMid;
+                // k     k+1
                 oldMid = mid;
 
-                k0 *= k; // только для Mode::NEWMODIFIED
-
-                mid = startPoint + orthCurrentVector * currentVectorLength * (mode == Mode::NEW ? k : k0);
+                mid = CVector(oldMid) - (CVector(oldMid) - CVector(oldTempMid)) / (tempVolume - oldTempVolume) * (tempVolume - volume);
+                oldTempVolume = tempVolume;
             }
 #endif // !NEWTON
         }
@@ -462,12 +498,16 @@ double CIrregMesh::getCutOffCellVolume(const int& cellNumber, const CSideEquatio
         bool duplicatePoint = false;    // Полученные точки пересечения будем брать лишь единожды.
         int duplicateId{};              // Если есть дубликат, то запишем его индекс
 
-        for (size_t faceNodeI = 0; faceNodeI < face.nodes.size(); ++faceNodeI)
+        for (size_t faceNodeI = 0; faceNodeI != face.nodes.size(); ++faceNodeI)
         {
-            const int Node1ID = face.cell1 == cellNumber ? face.nodes[faceNodeI] : face.nodes[(faceNodeI + 1ull) % face.nodes.size()];  // Индекс первой точки в глобальном массиве.
-            const int Node2ID = face.cell1 == cellNumber ? face.nodes[(faceNodeI + 1ull) % face.nodes.size()] : face.nodes[faceNodeI];  // Индекс второй точки в глобальном массиве.
+            // Индекс первой точки в глобальном массиве.
+            const int Node1ID = face.cell1 == cellNumber ?
+                face.nodes[faceNodeI] : face.nodes[(faceNodeI + 1ull) % face.nodes.size()];
+            // Индекс второй точки в глобальном массиве.
+            const int Node2ID = face.cell1 == cellNumber
+                ? face.nodes[(faceNodeI + 1ull) % face.nodes.size()] : face.nodes[faceNodeI];
             const CSurfaceNode& Node1 = nodes[Node1ID];    // первая точка для отрезка.
-            const CSurfaceNode& Node2 = nodes[Node2ID];    // вторая точка для отрезка. Типа ребро.
+            const CSurfaceNode& Node2 = nodes[Node2ID];    // вторая точка для отрезка. Node1 -> Node2 = ребро.
 
             const int Node1V = plane.getNormedValue(Node1);
             const int Node2V = plane.getNormedValue(Node2);
@@ -602,9 +642,9 @@ double CIrregMesh::getCutOffCellVolume(const int& cellNumber, const CSideEquatio
     }
 
     // Если проскость отсекает весь или пустой объёмы, то фукнция вернёт этот объём, никакие передаваемые далее параметры не будут затронуты!
-     if (resultFaces[0].size() == 1 && std::count_if(resultFaces[0][0].nodes.begin(), resultFaces[0][0].nodes.end(), std::bind(std::less<int>(), std::placeholders::_1, 0)) == resultFaces[0][0].nodes.size())
+    if (!resultFaces[0].size() || resultFaces[0].size() == 1 && std::count_if(resultFaces[0][0].nodes.begin(), resultFaces[0][0].nodes.end(), std::bind(std::less<int>(), std::placeholders::_1, 0)) == resultFaces[0][0].nodes.size())
         return 0.0;
-    if (resultFaces[1].size() == 1 && std::count_if(resultFaces[1][0].nodes.begin(), resultFaces[1][0].nodes.end(), std::bind(std::less<int>(), std::placeholders::_1, 0)) == resultFaces[1][0].nodes.size())
+    if (!resultFaces[1].size() || resultFaces[1].size() == 1 && std::count_if(resultFaces[1][0].nodes.begin(), resultFaces[1][0].nodes.end(), std::bind(std::less<int>(), std::placeholders::_1, 0)) == resultFaces[1][0].nodes.size())
         return getCellVolume(cell);
 
     // БЛОК 1.2. ОПРЕДЕЛИТЬ СТОРОНУ, ПОЛУЧАЕМУЮ КАК РЕЗУЛЬТАТ ПЕРЕСЕЧЕНИЯ С ПЛОСКОСТЬЮ
@@ -668,17 +708,26 @@ double CIrregMesh::getCutOffCellVolume(const int& cellNumber, const CSideEquatio
                     }
                 }
 
-                if (was)
-                    break;
-            } // на этом этапе найдена грань, содержащая соседнюю точку, отличная от текущей.
+                if (was)// на этом этапе найдена грань, содержащая соседнюю точку, отличная от текущей.
+                {
+                    nextNodeId = 0; // тут надо прикол
+                    const CIrregFace& face = resultFaces[0][startFaceId];
+                    for (size_t nodeId = 0; nodeId < face.nodes.size() && !nextNodeId; ++nodeId)
+                        if (face.nodes[nodeId] < 0 && face.nodes[nodeId] != startNodeID)
+                            if (std::find(rightUniquiePlanePoints.begin(), rightUniquiePlanePoints.end(), face.nodes[nodeId]) == rightUniquiePlanePoints.end() || face.nodes[nodeId] == initialeNodeID)
+                                nextNodeId = face.nodes[nodeId]; // на этом этапе найдена следующая соседняя точка.
 
-            nextNodeId = 0; // тут надо прикол
-            const CIrregFace& face = resultFaces[0][startFaceId];
-            for (size_t nodeId = 0; nodeId < face.nodes.size() && !nextNodeId; ++nodeId)
-                if (face.nodes[nodeId] < 0 && face.nodes[nodeId] != startNodeID)
-                    nextNodeId = face.nodes[nodeId]; // на этом этапе найдена следующая соседняя точка.
+                    if (nextNodeId)
+                    {
+                        startNodeID = nextNodeId; // чтобы идти дальше
+                        break;
+                    }
+                    else
+                        was = false;
+                }
+            } 
 
-            startNodeID = nextNodeId; // чтобы идти дальше
+            
 
         } while (nextNodeId != initialeNodeID);
     }
@@ -742,7 +791,7 @@ double CIrregMesh::getCutOffCellVolume(const int& cellNumber, const CSideEquatio
         }
     } // Сначала посчитали по известным граням
 
-    if (planePoints.size()) // Теперь с учетом ещё одной
+    if (planePoints.size()) // Теперь с учетом ещё одной (вообще говоря, этот пункт всегда должен работать)
     {
         CVector planeCenter; // Вычислим центр грани, полученной плоскостью
 
@@ -816,6 +865,230 @@ void CIrregMesh::setEdgePoint(const int& cellNumber, const int& point1ID, const 
     for (size_t i = 0; i < neighboringCells.size(); ++i)
         setEdgePoint(neighboringCells[i], point1ID, point2ID, newPointID); // для данного ребра всех соседних клеток вызовём данную функцию
 }
+
+void CIrregMesh::addRandomFigure(const CPoint& center)
+{
+    int figure = rand() % 3;
+
+    int startFace = faces.size();
+    int startNode = nodes.size();
+
+    double randEdge = 0.1 + 100. * rand() / RAND_MAX;
+    double randNodeShift = randEdge * rand() / RAND_MAX * (rand() % 2 ? 0.5 : -1);
+    if (figure == 0) // кубик
+    {
+        nodes.push_back(CSurfaceNode(center.X() - randEdge / 2 + randNodeShift, center.Y() - randEdge / 2 + randNodeShift, center.Z() - randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() - randEdge / 2 + randNodeShift, center.Y() - randEdge / 2 + randNodeShift, center.Z() + randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() - randEdge / 2 + randNodeShift, center.Y() + randEdge / 2 - randNodeShift, center.Z() - randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() - randEdge / 2 + randNodeShift, center.Y() + randEdge / 2 - randNodeShift, center.Z() + randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() + randEdge / 2 - randNodeShift, center.Y() - randEdge / 2 + randNodeShift, center.Z() - randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() + randEdge / 2 - randNodeShift, center.Y() - randEdge / 2 + randNodeShift, center.Z() + randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() + randEdge / 2 - randNodeShift, center.Y() + randEdge / 2 - randNodeShift, center.Z() - randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() + randEdge / 2 - randNodeShift, center.Y() + randEdge / 2 - randNodeShift, center.Z() + randEdge / 2));
+
+        CIrregFace Faces;
+        Faces.cell1 = cells.size();
+        Faces.cell2 = -1;
+
+        Faces.nodes = { startNode + 0, startNode + 4, startNode + 6, startNode + 2 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 1, startNode + 3, startNode + 7, startNode + 5 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 1, startNode + 5, startNode + 4, startNode + 0 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 3, startNode + 2, startNode + 6, startNode + 7 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 1, startNode + 0, startNode + 2, startNode + 3 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 7, startNode + 6, startNode + 4, startNode + 5 };
+        faces.push_back(Faces);
+
+        CIrregCell cell;
+        cell.facesInd = { startFace , startFace + 1,startFace + 2,startFace + 3,startFace + 4,startFace + 5 };
+
+        cells.push_back(cell);
+    }
+    else if (figure == 1) // 8 углов
+    {
+        nodes.push_back(CSurfaceNode(center.X(), center.Y(), center.Z() + 5 * randEdge / 2 + randNodeShift));
+        nodes.push_back(CSurfaceNode(center.X() - 3 * randEdge / 2, center.Y(), center.Z() + 3 * randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() - 2.5 * randEdge / 2, center.Y() - 2 * randEdge / 2, center.Z() + 3 * randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X(), center.Y() - 3 * randEdge / 2, center.Z() + 3 * randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() + 2.5 * randEdge / 2, center.Y() - 2 * randEdge / 2, center.Z() + 3 * randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() + 3 * randEdge / 2, center.Y(), center.Z() + 3 * randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() + 2.5 * randEdge / 2, center.Y() + 2 * randEdge / 2, center.Z() + 3 * randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X(), center.Y() + 3 * randEdge / 2, center.Z() + 3 * randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() - 2.5 * randEdge / 2, center.Y() + 2 * randEdge / 2, center.Z() + 3 * randEdge / 2));
+
+        nodes.push_back(CSurfaceNode(center.X() - 3 * randEdge / 2, center.Y(), center.Z() - 3 * randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() - 2.5 * randEdge / 2, center.Y() - 2 * randEdge / 2, center.Z() - 3 * randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X(), center.Y() - 3 * randEdge / 2, center.Z() - 3 * randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() + 2.5 * randEdge / 2, center.Y() - 2 * randEdge / 2, center.Z() - 3 * randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() + 3 * randEdge / 2, center.Y(), center.Z() - 3 * randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() + 2.5 * randEdge / 2, center.Y() + 2 * randEdge / 2, center.Z() - 3 * randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X(), center.Y() + 3 * randEdge / 2, center.Z() - 3 * randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X() - 2.5 * randEdge / 2, center.Y() + 2 * randEdge / 2, center.Z() - 3 * randEdge / 2));
+        nodes.push_back(CSurfaceNode(center.X(), center.Y(), center.Z() - 5 * randEdge / 2 - randNodeShift));
+
+        CIrregFace Faces;
+        Faces.cell2 = cells.size();
+        Faces.cell1 = -1;
+
+        Faces.nodes = { startNode + 1, startNode + 2, startNode + 0 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 2, startNode + 3, startNode + 0 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 3, startNode + 4, startNode + 0 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 4, startNode + 5, startNode + 0 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 5, startNode + 6, startNode + 0 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 6, startNode + 7, startNode + 0 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 7, startNode + 8, startNode + 0 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 8, startNode + 1, startNode + 0 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 1, startNode + 9, startNode + 10, startNode + 2 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 2, startNode + 10, startNode + 11, startNode + 3 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 3, startNode + 11, startNode + 12, startNode + 4 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 4, startNode + 12, startNode + 13, startNode + 5 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 5, startNode + 13, startNode + 14, startNode + 6 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 6, startNode + 14, startNode + 15, startNode + 7 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 7, startNode + 15, startNode + 16, startNode + 8 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 8, startNode + 16, startNode + 9, startNode + 1 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 9, startNode + 17, startNode + 10 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 10, startNode + 17, startNode + 11 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 11, startNode + 17, startNode + 12 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 12, startNode + 17, startNode + 13 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 13, startNode + 17, startNode + 14 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 14, startNode + 17, startNode + 15 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 15, startNode + 17, startNode + 16 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 16, startNode + 17, startNode + 9 };
+        faces.push_back(Faces);
+
+        CIrregCell cell;
+        cell.facesInd = { startFace + 0,startFace + 1,startFace + 2,startFace + 3,startFace + 4,startFace + 5,startFace + 6,startFace + 7,startFace + 8,startFace + 9,startFace + 10,startFace + 11,
+        startFace + 12, startFace + 13, startFace + 14, startFace + 15, startFace + 16, startFace + 17, startFace + 18, startFace + 19, startFace + 20, startFace + 21, startFace + 22, startFace + 23 };
+
+        cells.push_back(cell);
+    }
+    else if (figure == 2) // гробик
+    {
+        nodes.push_back(CSurfaceNode(center.X() - 2.5 * randEdge / 2 - randNodeShift, center.Y() - 2.5 * randEdge / 2 - randNodeShift, center.Z() - 1.5 * randEdge / 2 - randNodeShift));
+        nodes.push_back(CSurfaceNode(center.X() - 1.5 * randEdge / 2, center.Y() - 2.5 * randEdge / 2, center.Z() - 1.5 * randEdge / 2 - randNodeShift));
+        nodes.push_back(CSurfaceNode(center.X() + 2.5 * randEdge / 2, center.Y() + 1.5 * randEdge / 2, center.Z() - 1.5 * randEdge / 2 - randNodeShift));
+        nodes.push_back(CSurfaceNode(center.X() + 2.5 * randEdge / 2 + randNodeShift, center.Y() + 2.5 * randEdge / 2 + randNodeShift, center.Z() - 1.5 * randEdge / 2 - randNodeShift));
+        nodes.push_back(CSurfaceNode(center.X() + 1.5 * randEdge / 2, center.Y() + 2.5 * randEdge / 2, center.Z() - 1.5 * randEdge / 2 - randNodeShift));
+        nodes.push_back(CSurfaceNode(center.X() - 2.5 * randEdge / 2, center.Y() - 1.5 * randEdge / 2, center.Z() - 1.5 * randEdge / 2 - randNodeShift));
+
+        nodes.push_back(CSurfaceNode(center.X() - 2.5 * randEdge / 2 - randNodeShift, center.Y() - 2.5 * randEdge / 2 - randNodeShift, center.Z() + 1.5 * randEdge / 2+randNodeShift));
+        nodes.push_back(CSurfaceNode(center.X() - 1.5 * randEdge / 2, center.Y() - 2.5 * randEdge / 2, center.Z() + 1.5 * randEdge / 2+randNodeShift));
+        nodes.push_back(CSurfaceNode(center.X() + 2.5 * randEdge / 2, center.Y() + 1.5 * randEdge / 2, center.Z() + 1.5 * randEdge / 2+randNodeShift));
+        nodes.push_back(CSurfaceNode(center.X() + 2.5 * randEdge / 2 + randNodeShift, center.Y() + 2.5 * randEdge / 2 + randNodeShift, center.Z() + 1.5 * randEdge / 2+randNodeShift));
+        nodes.push_back(CSurfaceNode(center.X() + 1.5 * randEdge / 2, center.Y() + 2.5 * randEdge / 2, center.Z() + 1.5 * randEdge / 2+randNodeShift));
+        nodes.push_back(CSurfaceNode(center.X() - 2.5 * randEdge / 2, center.Y() - 1.5 * randEdge / 2, center.Z() + 1.5 * randEdge / 2+randNodeShift));
+
+        CIrregFace Faces;
+        Faces.cell1 = cells.size();
+        Faces.cell2 = -1;
+
+        Faces.nodes = { startNode + 0, startNode + 1, startNode + 2, startNode + 3, startNode + 4, startNode + 5 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 0, startNode + 6, startNode + 7, startNode + 1};
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 11, startNode + 6, startNode + 0, startNode + 5 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 1, startNode + 7, startNode + 8, startNode + 2 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 9, startNode + 3, startNode + 2, startNode + 8 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 9, startNode + 10, startNode + 4, startNode + 3 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 10, startNode + 11, startNode + 5, startNode + 4 };
+        faces.push_back(Faces);
+
+        Faces.nodes = { startNode + 6, startNode + 11, startNode + 10, startNode + 9, startNode + 8, startNode + 7 };
+        faces.push_back(Faces);
+
+        CIrregCell cell;
+        cell.facesInd = { startFace + 0, startFace + 1, startFace + 2, startFace + 3, startFace + 4, startFace + 5, startFace + 6, startFace + 7 };
+
+        cells.push_back(cell);
+    }
+}
+
+std::vector<int> CIrregMesh::getCellNodesIds(const int& cellNumber) const
+{
+    const CIrregCell& cell = cells[cellNumber];
+    std::vector<int> res;
+    for (int fId = 0; fId < cell.facesInd.size(); ++fId)
+    {
+        const CIrregFace& face = faces[cell.facesInd[fId]];
+        for (int nId = 0; nId < face.nodes.size(); ++nId)
+        {
+            const int& node = face.nodes[nId];
+            if (std::find(res.begin(), res.end(), node) == res.end())
+                res.push_back(node);
+        }
+    }
+
+    std::sort(res.begin(), res.end());
+
+    return res;
+}
+
+
 #ifdef NEWTON
 void CIrregMesh::setMode(Mode newMode) noexcept
 {
