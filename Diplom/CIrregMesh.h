@@ -8,13 +8,12 @@
 #include "Tetrahedron.h"
 #include "CException.h"
 
-#define NEWTON
-
 class CIrregMesh
 {
 public:
 	using INT3 = std::tuple<int, int, int>;         // 3 int-а, идущие подр€д
 	using INT4 = std::tuple<int, int, int, int>;    // 4 int-а, идущие подрад
+	using INTERSECTION_INFO = std::vector<std::vector<std::pair<int, double>>>; // номер €чейки 1й сетки (идекс элемента вектора), номер €чейки 2й сетки с соответствующим объЄмом пересечени€
 
 	CIrregMesh() noexcept;
 	std::vector<CIrregCell> cells;
@@ -25,7 +24,7 @@ public:
 
 	void spliteFaceByTriangles(const int& faceNumber); // не затрагивает рЄбра.
 
-	double getCellVolume(const CIrregCell& cell) const noexcept;
+	double getCellVolume(const int& cellNumber) const noexcept;
 
 	// OUTresultFaces - массив из 2 элементов! 
 	// plane - уже проходит через нужную точку!
@@ -48,26 +47,17 @@ public:
 
 	std::vector<int> getCellNodesIds(const int& cellNumber) const;
 
-#ifdef NEWTON
-	enum class Mode
-	{
-		OLD,
-		NEW,
-		NEWMODIFIED
-	};
-
-	void setMode(Mode newMode) noexcept;
-#endif // NEWTON
-
+	INTERSECTION_INFO getMeshIntersection(const CIrregMesh& other) const; //!!!
 private:
-	CSurfaceNode getCellCenter(const CIrregCell& cell) const noexcept;
+	CSurfaceNode getCellCenter(const int& cellNumber) const noexcept;
 	CSurfaceNode getFaceCenter(const CIrregFace& face) const noexcept;
 
-	std::vector<Tetrahedron> spliteCellByTetrahedrons(const CIrregCell& cell) const noexcept;
+	std::vector<Tetrahedron> spliteCellByTetrahedrons(const int& cellNumber) const noexcept;
 
-#ifdef NEWTON
-	Mode mode;
-#endif // NEWTON
+	double getVolumeCellsIntersection(const int& cn, const CIrregMesh& other, const int& ocn) const;
+	double getVolumeTetrahedronIntersection(const Tetrahedron& t, const CIrregMesh& other, const int& ocn) const;
+
+	CSideEquation getFaceEquation(const int& faceId, const int& cellId) const;
 };
 
 template<typename OStream>

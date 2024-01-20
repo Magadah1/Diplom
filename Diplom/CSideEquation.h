@@ -1,5 +1,6 @@
 #pragma once
 #include "CVector.h"
+#include <array>
 
 class CSideEquation
 {
@@ -10,6 +11,7 @@ public:
 	CSideEquation(const CPoint* p1, const CPoint* p2, const CPoint* p3);
 	CSideEquation(const CPoint& p, const CVector& v1, const CVector& v2) noexcept;
 	CSideEquation(const CPoint* p, const CVector* v1, const CVector* v2);
+	CSideEquation(const std::array<CPoint, 3>& vs) noexcept;
 	CSideEquation(const CSideEquation& other) noexcept;
 	CSideEquation(const CSideEquation* other);
 	CSideEquation(const CVector& n) noexcept;
@@ -36,7 +38,7 @@ public:
 		return getValue(*p);
 	}
 	int getNormedValue(const CPoint& p) const noexcept;
-	inline double getNormedValue(const CPoint* p) const
+	inline int getNormedValue(const CPoint* p) const
 	{
 		return getNormedValue(*p);
 	}
@@ -48,6 +50,17 @@ public:
 	inline double recalcD(const CPoint* p)
 	{
 		return recalcD(*p);
+	}
+	inline CSideEquation& Normalize()
+	{
+		const double nL = CVector(a, b, c).Length();
+		if (abs(nL) < 1e-6) return *this;
+		const double _nl = 1. / nL;
+		a *= _nl;
+		b *= _nl;
+		c *= _nl;
+		d *= _nl;
+		return *this;
 	}
 	
 	// ¬озвращает true - если есть пересечение пр€мой и плоскости. ¬ result записываетс€ сама точка пересечени€, если это необходимо. 

@@ -43,6 +43,11 @@ CSideEquation::CSideEquation(const CPoint* p, const CVector* v1, const CVector* 
 {
 }
 
+CSideEquation::CSideEquation(const std::array<CPoint, 3>& vs) noexcept
+	: CSideEquation(vs[0], vs[1], vs[2])
+{
+}
+
 CSideEquation::CSideEquation(const CSideEquation& other) noexcept
 	: a(other.a), b(other.b), c(other.c), d(other.d)
 {
@@ -138,39 +143,8 @@ bool CSideEquation::getIntersectionPoint(const CPoint* p, const CVector* v, CPoi
 
 bool CSideEquation::getIntersectionPointOnLine(const CPoint& p1, const CPoint& p2, CPoint* const result) const noexcept
 {
-	/*CPoint res;
-
-	if (!getIntersectionPoint(p1, p2, &res))
-		return false;*/
-
-	// Сравнение по длинам составных отрезков
-	/*if (abs(CVector(p1).createVector(res).Length() + CVector(res).createVector(p2).Length() - CVector(p1).createVector(p2).Length()) < 1e-6)
-	{
-		if (result)
-			*result = res;
-		return true;
-	}
-
-	return false;*/
-
-	double valueP1 = getNormedValue(p1); 
-	double valueP2 = getNormedValue(p2); 
-
-	// значения valueP1[2] равны 1,0 или -1 если точка находится по направлению нормали, на плоскости или против направления нормали соответсвенно
-	
-	// более долгое стравнение (от 1 до 3 проверок)
-	//if (
-	//	valueP1 == -valueP2 // если знаки разные, то точки по разную сторону от плоскости => точка пересечения внутри отрезка
-	//	||
-	//	!valueP1 
-	//	||					// одна из точек на плоскости, она и будет точкой пересечения.
-	//	!valueP2
-	//	)
-	//{
-	//	*result = res;
-	//	return true;
-	//}
-	//return false;
+	int valueP1 = getNormedValue(p1); 
+	int valueP2 = getNormedValue(p2); 
 
 	// более быстрое сравнение (от 1 до 2 проверок)
 	if (
@@ -179,9 +153,7 @@ bool CSideEquation::getIntersectionPointOnLine(const CPoint& p1, const CPoint& p
 	{
 		return false;
 	}
-	/*if (result)
-		*result = res;
-	return true;*/
+	
 	return getIntersectionPoint(p1, p2, result);
 }
 

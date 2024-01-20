@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
-
+#include "CSideEquation.h"
+#include "CException.h"
 class CIrregFace
 {
 public:
